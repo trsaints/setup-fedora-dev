@@ -34,11 +34,11 @@ prompt_git_segment() {
   git diff --quiet --ignore-submodules -- 2>/dev/null || git_state=" *"
   git diff --cached --quiet --ignore-submodules -- 2>/dev/null || git_state=" *"
 
-  printf ' %%F{cyan}->%%f %%F{yellow}git::%%f %%F{magenta}%s%s%%f' "$branch" "$git_state"
+  printf ' %%F{cyan}->%%f %%F{yellow}%%f %%F{magenta}%s%s%%f' "$branch" "$git_state"
 }
 
 prompt_command_duration() {
-  [[ -n "$PROMPT_COMMAND_DURATION" ]] && printf '%%F{magenta}took::%%f %%F{yellow}%s%%f %%F{cyan}->%%f ' "$PROMPT_COMMAND_DURATION"
+  [[ -n "$PROMPT_COMMAND_DURATION" ]] && printf '%%F{magenta}󰔟%%f %%F{yellow}%s%%f %%F{cyan}->%%f ' "$PROMPT_COMMAND_DURATION"
 }
 
 custom_prompt_preexec() {
@@ -70,7 +70,7 @@ add-zsh-hook preexec custom_prompt_preexec
 add-zsh-hook precmd custom_prompt_precmd
 
 PROMPT=$'%F{magenta}%B%n%b%f %F{cyan}->%f %F{blue}%B%~%b%f$(prompt_git_segment)\n%F{green}=>%f '
-RPROMPT='$(prompt_command_duration)%F{blue}time::%f %F{cyan}%*%f'
+RPROMPT='$(prompt_command_duration)%F{blue}%f %F{cyan}%*%f'
 
 export EDITOR=nvim
 export VISUAL=nvim
