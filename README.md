@@ -8,6 +8,7 @@ O script Bash original continua em `setup-fedora-dev.sh` como referência, mas o
 
 - Atualiza o sistema com `dnf upgrade --refresh`.
 - Instala ferramentas base: Git, GCC, Make, Neovim, ripgrep, fd, fzf, jq, tmux, btop, eza, bat, Zsh, Kitty, pgModeler e dependências de build para runtimes.
+- Instala DBeaver CE via RPM oficial, se `install_dbeaver` estiver ativo.
 - Instala `mise`.
 - Instala runtimes/SDKs e ferramentas globais pelo `mise`: `.NET`, `Python`, `Node.js LTS`, `Go` e `lazygit`.
 - Instala `pipx` e ferramentas Python usando o Python gerenciado pelo `mise`: `uv`, `poetry`, `ruff`, `black`, `mypy`, `ipython`, `httpie`, `cookiecutter` e `pre-commit`.
@@ -44,6 +45,7 @@ Primeiro revise `group_vars/all.yml`, principalmente estas flags:
 - `configure_gnome`: aplica tema e atalhos GNOME.
 - `configure_shell`: instala Oh My Zsh, plugins e altera shell padrão.
 - `install_lazyvim`: instala LazyVim em `~/.config/nvim`.
+- `install_dbeaver`: instala DBeaver CE via RPM oficial.
 
 Depois execute:
 

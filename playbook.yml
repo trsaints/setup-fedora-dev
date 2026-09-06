@@ -29,6 +29,14 @@
         update_cache: true
       become: true
 
+    - name: Install DBeaver CE
+      ansible.builtin.dnf:
+        name: "{{ dbeaver_rpm_url }}"
+        state: present
+        disable_gpg_check: true
+      become: true
+      when: install_dbeaver
+
     - name: Check SRE package availability
       ansible.builtin.command: "dnf repoquery --quiet --available {{ item }}"
       loop: "{{ sre_packages }}"

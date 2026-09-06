@@ -12,6 +12,7 @@ configure_gnome: true
 configure_shell: true
 configure_kitty: true
 install_lazyvim: true
+install_dbeaver: true
 k9s_archive_url: "https://github.com/derailed/k9s/releases/latest/download/k9s_Linux_amd64.tar.gz"
 
 mise_tools:
@@ -111,3 +112,4 @@ zsh_custom_dir: "{{ dev_home }}/.oh-my-zsh/custom"
 oh_my_zsh_installer_url: https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh
 oh_my_zsh_installer_path: /tmp/oh-my-zsh-installer.sh
 zsh_plugin_version: master
+dbeaver_rpm_url: https://dbeaver.io/files/dbeaver-ce-latest-linux-x86_64.rpm
