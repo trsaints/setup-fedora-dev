@@ -18,6 +18,61 @@ plugins=(
 
 source "$ZSH/oh-my-zsh.sh"
 
+setopt prompt_subst
+zmodload zsh/datetime 2>/dev/null || true
+
+PROMPT_COMMAND_START=0
+PROMPT_COMMAND_DURATION=""
+
+prompt_git_segment() {
+  local branch
+  local status=""
+
+  branch=$(git symbolic-ref --quiet --short HEAD 2>/dev/null \
+    || git rev-parse --short HEAD 2>/dev/null) || return
+
+  git diff --quiet --ignore-submodules -- 2>/dev/null || status=" *"
+  git diff --cached --quiet --ignore-submodules -- 2>/dev/null || status=" *"
+
+  printf ' %%F{cyan}->%%f %%F{yellow}git::%%f %%F{magenta}%s%s%%f' "$branch" "$status"
+}
+
+prompt_command_duration() {
+  [[ -n "$PROMPT_COMMAND_DURATION" ]] && printf '%%F{magenta}took::%%f %%F{yellow}%s%%f %%F{cyan}->%%f ' "$PROMPT_COMMAND_DURATION"
+}
+
+custom_prompt_preexec() {
+  PROMPT_COMMAND_START=$EPOCHSECONDS
+}
+
+custom_prompt_precmd() {
+  local elapsed
+
+  PROMPT_COMMAND_DURATION=""
+  (( PROMPT_COMMAND_START > 0 )) || return
+
+  elapsed=$(( EPOCHSECONDS - PROMPT_COMMAND_START ))
+  PROMPT_COMMAND_START=0
+
+  (( elapsed >= 5 )) || return
+
+  if (( elapsed >= 3600 )); then
+    PROMPT_COMMAND_DURATION="$(( elapsed / 3600 ))h $(( elapsed % 3600 / 60 ))m $(( elapsed % 60 ))s"
+  elif (( elapsed >= 60 )); then
+    PROMPT_COMMAND_DURATION="$(( elapsed / 60 ))m $(( elapsed % 60 ))s"
+  else
+    PROMPT_COMMAND_DURATION="${elapsed}s"
+  fi
+}
+
+autoload -Uz add-zsh-hook
+add-zsh-hook preexec custom_prompt_preexec
+add-zsh-hook precmd custom_prompt_precmd
+
+PROMPT='%F{magenta}%B%n%b%f %F{cyan}->%f %F{blue}%B%~%b%f$(prompt_git_segment)
+%F{green}=>%f '
+RPROMPT='$(prompt_command_duration)%F{blue}time::%f %F{cyan}%*%f'
+
 export EDITOR=nvim
 export VISUAL=nvim
 export PAGER=less
