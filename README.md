@@ -9,7 +9,7 @@ O script Bash original continua em `setup-fedora-dev.sh` como referência, mas o
 - Atualiza o sistema com `dnf upgrade --refresh`.
 - Instala ferramentas base: Git, GCC, Make, Neovim, ripgrep, fd, fzf, jq, tmux, btop, eza, bat, Zsh, Kitty e dependências de build para runtimes.
 - Instala `mise`.
-- Instala runtimes/SDKs globais pelo `mise`: `.NET`, `Python`, `Node.js LTS` e `Go`.
+- Instala runtimes/SDKs e ferramentas globais pelo `mise`: `.NET`, `Python`, `Node.js LTS`, `Go` e `lazygit`.
 - Instala `pipx` e ferramentas Python usando o Python gerenciado pelo `mise`: `uv`, `poetry`, `ruff`, `black`, `mypy`, `ipython`, `httpie`, `cookiecutter` e `pre-commit`.
 - Instala ferramentas SRE quando disponíveis: `ansible`, `kubectl`, `helm`, `terraform` e `k9s`.
 - Instala `k9s` pelo release oficial do GitHub.
@@ -19,7 +19,7 @@ O script Bash original continua em `setup-fedora-dev.sh` como referência, mas o
 - Instala Dracula GTK Theme e aplica tema escuro no GNOME.
 - Configura Kitty com Dracula, JetBrains Mono Nerd Font, splits, tabs e `Ctrl+Backspace` para apagar palavra.
 - Configura Zsh com Oh My Zsh, Dracula, autocomplete, autosuggestions e syntax highlighting.
-- Instala LazyVim em `~/.config/nvim`.
+- Instala LazyVim em `~/.config/nvim` com `lazygit` disponível para integrações Git.
 - Configura atalhos GNOME úteis.
 
 ## Arquivos Principais
@@ -51,7 +51,7 @@ chmod +x bootstrap.sh
 ./bootstrap.sh
 ```
 
-O bootstrap pede senha via `sudo` para instalar `ansible-core`, se necessário. O Ansible também pede senha de `become` para tarefas administrativas.
+O bootstrap pede e valida a senha via `sudo`, permitindo nova tentativa se ela for digitada errado, e repassa a senha validada ao Ansible para tarefas administrativas.
 
 A execução via `bootstrap.sh` grava o stdout em `logs/ansible-YYYYMMDD-HHMMSS.log`. O próprio Ansible também grava em `logs/ansible.log`.
 

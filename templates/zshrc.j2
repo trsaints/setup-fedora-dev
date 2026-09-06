@@ -26,15 +26,57 @@ PROMPT_COMMAND_DURATION=""
 
 prompt_git_segment() {
   local branch
-  local git_state=""
+  local git_status
+  local line index_state worktree_state
+  local has_conflicts=false
+  local has_staged=false
+  local has_unstaged=false
+  local has_untracked=false
+  local git_symbol=""
+  local git_color="green"
 
   branch=$(git symbolic-ref --quiet --short HEAD 2>/dev/null \
     || git rev-parse --short HEAD 2>/dev/null) || return
+  git_status=$(git status --porcelain=v1 --branch 2>/dev/null)
 
-  git diff --quiet --ignore-submodules -- 2>/dev/null || git_state=" *"
-  git diff --cached --quiet --ignore-submodules -- 2>/dev/null || git_state=" *"
+  for line in ${(f)git_status}; do
+    [[ "$line" == '## '* ]] && continue
+    [[ "$line" == '?? '* ]] && has_untracked=true && continue
 
-  printf ' %%F{cyan}->%%f %%F{yellow}%%f %%F{magenta}%s%s%%f' "$branch" "$git_state"
+    index_state=${line[1,1]}
+    worktree_state=${line[2,2]}
+
+    case "$index_state$worktree_state" in
+      DD|AU|UD|UA|DU|AA|UU) has_conflicts=true ;;
+    esac
+    [[ "$index_state" == [MADRC] ]] && has_staged=true
+    [[ "$worktree_state" == [MD] ]] && has_unstaged=true
+  done
+
+  if [[ "$has_conflicts" == true ]]; then
+    git_symbol=""
+    git_color="red"
+  elif [[ "$has_staged" == true ]]; then
+    git_symbol=""
+    git_color="green"
+  elif [[ "$has_unstaged" == true ]]; then
+    git_symbol=""
+    git_color="yellow"
+  elif [[ "$has_untracked" == true ]]; then
+    git_symbol=""
+    git_color="cyan"
+  elif [[ "$git_status" == *'ahead '* && "$git_status" == *'behind '* ]]; then
+    git_symbol="⇅"
+    git_color="magenta"
+  elif [[ "$git_status" == *'ahead '* ]]; then
+    git_symbol="↑"
+    git_color="magenta"
+  elif [[ "$git_status" == *'behind '* ]]; then
+    git_symbol="↓"
+    git_color="magenta"
+  fi
+
+  printf ' %%F{cyan}->%%f %%F{yellow}%%f %%F{%s}%s%%f %%F{magenta}%s%%f' "$git_color" "$git_symbol" "$branch"
 }
 
 prompt_command_duration() {

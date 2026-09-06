@@ -17,6 +17,7 @@ k9s_archive_url: "https://github.com/derailed/k9s/releases/latest/download/k9s_L
 mise_tools:
   - dotnet@latest
   - go@latest
+  - lazygit@latest
   - node@lts
   - python@latest
 
