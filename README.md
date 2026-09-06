@@ -19,7 +19,7 @@ O script Bash original continua em `setup-fedora-dev.sh` como referência, mas o
 - Instala Dracula GTK Theme e aplica tema escuro no GNOME.
 - Configura Kitty com Dracula, JetBrains Mono Nerd Font, splits, tabs e `Ctrl+Backspace` para apagar palavra.
 - Configura Zsh com Oh My Zsh, Dracula, autocomplete, autosuggestions e syntax highlighting.
-- Instala LazyVim em `~/.config/nvim` com `lazygit` disponível para integrações Git.
+- Instala LazyVim em `~/.config/nvim` com extras para Python, .NET/C#, debug/testes e `lazygit` disponível para integrações Git.
 - Configura atalhos GNOME úteis.
 
 ## Arquivos Principais
@@ -30,6 +30,7 @@ O script Bash original continua em `setup-fedora-dev.sh` como referência, mas o
 - `ansible.cfg`: configuração do Ansible para execução local.
 - `bootstrap.sh`: instala `ansible-core` se necessário e executa o playbook.
 - `templates/kitty.conf.j2`: configuração do Kitty.
+- `templates/lazyvim-extras.lua.j2`: extras de linguagem habilitados no LazyVim.
 - `templates/zshrc.j2`: configuração do Zsh.
 - `logs/`: diretório local para logs de execução, não versionados.
 

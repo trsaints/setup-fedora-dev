@@ -433,6 +433,21 @@
         update: false
       when: install_lazyvim
 
+    - name: Ensure LazyVim plugins directory exists
+      ansible.builtin.file:
+        path: "{{ lazyvim_dir }}/lua/plugins"
+        state: directory
+        mode: "0755"
+      when: install_lazyvim
+
+    - name: Configure LazyVim language extras
+      ansible.builtin.template:
+        src: templates/lazyvim-extras.lua.j2
+        dest: "{{ lazyvim_dir }}/lua/plugins/extras.lua"
+        mode: "0644"
+        backup: true
+      when: install_lazyvim
+
     - name: Sync LazyVim plugins
       ansible.builtin.command: nvim --headless '+Lazy! sync' +qa
       register: lazyvim_sync
