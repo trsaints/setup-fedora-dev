@@ -206,6 +206,7 @@
       ansible.builtin.dnf:
         name:
           - gtk-murrine-engine
+          - gnome-shell-extension-user-theme
           - sassc
         state: present
       become: true
@@ -218,6 +219,20 @@
         mode: "0755"
       when: configure_gnome
 
+    - name: Ensure icons directory exists
+      ansible.builtin.file:
+        path: "{{ dev_home }}/.icons"
+        state: directory
+        mode: "0755"
+      when: configure_gnome
+
+    - name: Ensure GTK4 config directory exists
+      ansible.builtin.file:
+        path: "{{ dev_home }}/.config/gtk-4.0"
+        state: directory
+        mode: "0755"
+      when: configure_gnome
+
     - name: Install Dracula GTK theme
       ansible.builtin.git:
         repo: https://github.com/dracula/gtk.git
@@ -226,13 +241,55 @@
         update: true
       when: configure_gnome
 
+    - name: Apply Dracula GTK4 assets
+      ansible.builtin.copy:
+        src: "{{ dracula_theme_dir }}/assets"
+        dest: "{{ dev_home }}/.config"
+        mode: preserve
+        remote_src: true
+      when: configure_gnome
+
+    - name: Apply Dracula GTK4 stylesheets
+      ansible.builtin.copy:
+        src: "{{ dracula_theme_dir }}/gtk-4.0/{{ item }}"
+        dest: "{{ dev_home }}/.config/gtk-4.0/{{ item }}"
+        mode: "0644"
+        remote_src: true
+      loop:
+        - gtk.css
+        - gtk-dark.css
+      when: configure_gnome
+
+    - name: Download Dracula icon theme
+      ansible.builtin.get_url:
+        url: "{{ dracula_icon_url }}"
+        dest: "{{ dracula_icon_archive }}"
+        mode: "0644"
+      when: configure_gnome
+
+    - name: Install Dracula icon theme
+      ansible.builtin.unarchive:
+        src: "{{ dracula_icon_archive }}"
+        dest: "{{ dev_home }}/.icons"
+        remote_src: true
+        creates: "{{ dracula_icon_dir }}/index.theme"
+      when: configure_gnome
+
+    - name: Enable GNOME user theme extension
+      ansible.builtin.command: gnome-extensions enable user-theme@gnome-shell-extensions.gcampax.github.com
+      changed_when: false
+      failed_when: false
+      when: configure_gnome
+
     - name: Apply GNOME appearance settings
       ansible.builtin.command: "gsettings set {{ item.schema }} {{ item.key }} {{ item.value }}"
       loop:
         - { schema: org.gnome.desktop.interface, key: gtk-theme, value: Dracula }
         - { schema: org.gnome.desktop.wm.preferences, key: theme, value: Dracula }
+        - { schema: org.gnome.desktop.interface, key: icon-theme, value: Dracula }
         - { schema: org.gnome.desktop.interface, key: color-scheme, value: prefer-dark }
         - { schema: org.gnome.desktop.interface, key: monospace-font-name, value: "'JetBrainsMono Nerd Font 11'" }
+        - { schema: org.gnome.shell.extensions.user-theme, key: name, value: Dracula }
       loop_control:
         label: "{{ item.schema }} {{ item.key }}"
       changed_when: false

@@ -96,5 +96,8 @@ podman_packages:
 jetbrains_mono_version: "3.4.0"
 jetbrains_mono_url: "https://github.com/ryanoasis/nerd-fonts/releases/download/v{{ jetbrains_mono_version }}/JetBrainsMono.zip"
 dracula_theme_dir: "{{ dev_home }}/.themes/Dracula"
+dracula_icon_url: "https://github.com/dracula/gtk/files/5214870/Dracula.zip"
+dracula_icon_archive: "/tmp/Dracula-icons.zip"
+dracula_icon_dir: "{{ dev_home }}/.icons/Dracula"
 lazyvim_dir: "{{ dev_home }}/.config/nvim"
 zsh_custom_dir: "{{ dev_home }}/.oh-my-zsh/custom"

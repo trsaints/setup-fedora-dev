@@ -26,15 +26,15 @@ PROMPT_COMMAND_DURATION=""
 
 prompt_git_segment() {
   local branch
-  local status=""
+  local git_state=""
 
   branch=$(git symbolic-ref --quiet --short HEAD 2>/dev/null \
     || git rev-parse --short HEAD 2>/dev/null) || return
 
-  git diff --quiet --ignore-submodules -- 2>/dev/null || status=" *"
-  git diff --cached --quiet --ignore-submodules -- 2>/dev/null || status=" *"
+  git diff --quiet --ignore-submodules -- 2>/dev/null || git_state=" *"
+  git diff --cached --quiet --ignore-submodules -- 2>/dev/null || git_state=" *"
 
-  printf ' %%F{cyan}->%%f %%F{yellow}git::%%f %%F{magenta}%s%s%%f' "$branch" "$status"
+  printf ' %%F{cyan}->%%f %%F{yellow}git::%%f %%F{magenta}%s%s%%f' "$branch" "$git_state"
 }
 
 prompt_command_duration() {
@@ -69,8 +69,7 @@ autoload -Uz add-zsh-hook
 add-zsh-hook preexec custom_prompt_preexec
 add-zsh-hook precmd custom_prompt_precmd
 
-PROMPT='%F{magenta}%B%n%b%f %F{cyan}->%f %F{blue}%B%~%b%f$(prompt_git_segment)
-%F{green}=>%f '
+PROMPT=$'%F{magenta}%B%n%b%f %F{cyan}->%f %F{blue}%B%~%b%f$(prompt_git_segment)\n%F{green}=>%f '
 RPROMPT='$(prompt_command_duration)%F{blue}time::%f %F{cyan}%*%f'
 
 export EDITOR=nvim
