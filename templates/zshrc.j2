@@ -33,7 +33,7 @@ prompt_git_segment() {
   local has_unstaged=false
   local has_untracked=false
   local git_symbol=""
-  local git_color="green"
+  local git_color_code="%F{green}"
 
   branch=$(git symbolic-ref --quiet --short HEAD 2>/dev/null \
     || git rev-parse --short HEAD 2>/dev/null) || return
@@ -55,28 +55,28 @@ prompt_git_segment() {
 
   if [[ "$has_conflicts" == true ]]; then
     git_symbol=""
-    git_color="red"
+    git_color_code="%F{red}"
   elif [[ "$has_staged" == true ]]; then
     git_symbol=""
-    git_color="green"
+    git_color_code="%F{green}"
   elif [[ "$has_unstaged" == true ]]; then
     git_symbol=""
-    git_color="yellow"
+    git_color_code="%F{yellow}"
   elif [[ "$has_untracked" == true ]]; then
     git_symbol=""
-    git_color="cyan"
+    git_color_code="%F{cyan}"
   elif [[ "$git_status" == *'ahead '* && "$git_status" == *'behind '* ]]; then
     git_symbol="⇅"
-    git_color="magenta"
+    git_color_code="%F{magenta}"
   elif [[ "$git_status" == *'ahead '* ]]; then
     git_symbol="↑"
-    git_color="magenta"
+    git_color_code="%F{magenta}"
   elif [[ "$git_status" == *'behind '* ]]; then
     git_symbol="↓"
-    git_color="magenta"
+    git_color_code="%F{magenta}"
   fi
 
-  printf ' %%F{cyan}->%%f %%F{yellow}%%f %%F{%s}%s%%f %%F{magenta}%s%%f' "$git_color" "$git_symbol" "$branch"
+  printf ' %%F{cyan}->%%f %%F{yellow}%%f %s%s%%f %%F{magenta}%s%%f' "$git_color_code" "$git_symbol" "$branch"
 }
 
 prompt_command_duration() {
