@@ -31,6 +31,7 @@ O script Bash original continua em `setup-fedora-dev.sh` como referência, mas o
 - `bootstrap.sh`: instala `ansible-core` se necessário e executa o playbook.
 - `templates/kitty.conf.j2`: configuração do Kitty.
 - `templates/zshrc.j2`: configuração do Zsh.
+- `logs/`: diretório local para logs de execução, não versionados.
 
 ## Executar
 
@@ -51,6 +52,8 @@ chmod +x bootstrap.sh
 ```
 
 O bootstrap pede senha via `sudo` para instalar `ansible-core`, se necessário. O Ansible também pede senha de `become` para tarefas administrativas.
+
+A execução via `bootstrap.sh` grava o stdout em `logs/ansible-YYYYMMDD-HHMMSS.log`. O próprio Ansible também grava em `logs/ansible.log`.
 
 Se o Ansible já estiver instalado:
 
@@ -109,4 +112,4 @@ kitty
 - Runtimes e SDKs não são instalados diretamente pelo `dnf`; ficam sob controle do `mise`.
 - Se você já tiver um `~/.zshrc`, o Ansible cria backup antes de substituir.
 - Se você já tiver uma configuração em `~/.config/nvim` que não seja Git, o playbook para antes de sobrescrever.
-- Se algum pacote SRE não existir no repositório habilitado do Fedora, o playbook continua e informa o pacote indisponível.
+- Se algum pacote SRE não existir no repositório habilitado do Fedora, o playbook continua e informa o pacote indisponível. A disponibilidade é detectada pelo `stdout` do `dnf repoquery`, não apenas pelo código de saída.

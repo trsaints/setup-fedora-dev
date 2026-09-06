@@ -32,7 +32,8 @@ pip-wheel-metadata/
 
 # Logs
 *.log
-logs/
+logs/*.log
+!logs/.gitkeep
 
 # Environment variables and local secrets
 .env
