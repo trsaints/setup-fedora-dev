@@ -58,6 +58,7 @@ base_packages:
   - make
   - neovim
   - openssl-devel
+  - pgmodeler
   - procps-ng
   - python3-psutil
   - readline-devel

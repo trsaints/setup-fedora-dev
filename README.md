@@ -7,7 +7,7 @@ O script Bash original continua em `setup-fedora-dev.sh` como referência, mas o
 ## O Que Ele Faz
 
 - Atualiza o sistema com `dnf upgrade --refresh`.
-- Instala ferramentas base: Git, GCC, Make, Neovim, ripgrep, fd, fzf, jq, tmux, btop, eza, bat, Zsh, Kitty e dependências de build para runtimes.
+- Instala ferramentas base: Git, GCC, Make, Neovim, ripgrep, fd, fzf, jq, tmux, btop, eza, bat, Zsh, Kitty, pgModeler e dependências de build para runtimes.
 - Instala `mise`.
 - Instala runtimes/SDKs e ferramentas globais pelo `mise`: `.NET`, `Python`, `Node.js LTS`, `Go` e `lazygit`.
 - Instala `pipx` e ferramentas Python usando o Python gerenciado pelo `mise`: `uv`, `poetry`, `ruff`, `black`, `mypy`, `ipython`, `httpie`, `cookiecutter` e `pre-commit`.
