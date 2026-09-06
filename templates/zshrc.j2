@@ -76,11 +76,11 @@ prompt_git_segment() {
     git_color_code="%F{magenta}"
   fi
 
-  printf ' %%F{cyan}->%%f %%F{yellow}%%f %s%s%%f %%F{magenta}%s%%f' "$git_color_code" "$git_symbol" "$branch"
+  printf ' %%F{cyan}%%f %%F{yellow}%%f %s%s%%f %%F{magenta}%s%%f' "$git_color_code" "$git_symbol" "$branch"
 }
 
 prompt_command_duration() {
-  [[ -n "$PROMPT_COMMAND_DURATION" ]] && printf '%%F{magenta}󰔟%%f %%F{yellow}%s%%f %%F{cyan}->%%f ' "$PROMPT_COMMAND_DURATION"
+  [[ -n "$PROMPT_COMMAND_DURATION" ]] && printf '%%F{magenta}󰔟%%f %%F{yellow}%s%%f %%F{cyan}%%f ' "$PROMPT_COMMAND_DURATION"
 }
 
 custom_prompt_preexec() {
@@ -111,7 +111,7 @@ autoload -Uz add-zsh-hook
 add-zsh-hook preexec custom_prompt_preexec
 add-zsh-hook precmd custom_prompt_precmd
 
-PROMPT=$'%F{magenta}%B%n%b%f %F{cyan}->%f %F{blue}%B%~%b%f$(prompt_git_segment)\n%F{green}=>%f '
+PROMPT=$'%F{magenta}%B%n%b%f %F{cyan}%f %F{blue}%B%~%b%f$(prompt_git_segment)\n%F{green}❯%f '
 RPROMPT='$(prompt_command_duration)%F{blue}%f %F{cyan}%*%f'
 
 export EDITOR=nvim
