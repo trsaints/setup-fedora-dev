@@ -29,13 +29,27 @@
         update_cache: true
       become: true
 
+    - name: Download DBeaver CE RPM
+      ansible.builtin.get_url:
+        url: "{{ dbeaver_rpm_url }}"
+        dest: "{{ dbeaver_rpm_path }}"
+        mode: "0644"
+        checksum: "sha256:{{ dbeaver_rpm_sha256 }}"
+      when: install_dbeaver
+
     - name: Install DBeaver CE
       ansible.builtin.dnf:
-        name: "{{ dbeaver_rpm_url }}"
+        name: "{{ dbeaver_rpm_path }}"
         state: present
         disable_gpg_check: true
       become: true
       when: install_dbeaver
+
+    - name: Install pgModeler
+      ansible.builtin.dnf:
+        name: "{{ pgmodeler_package }}"
+        state: present
+      become: true
 
     - name: Check SRE package availability
       ansible.builtin.command: "dnf repoquery --quiet --available {{ item }}"

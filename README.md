@@ -7,10 +7,11 @@ O script Bash original continua em `setup-fedora-dev.sh` como referência, mas o
 ## O Que Ele Faz
 
 - Atualiza o sistema com `dnf upgrade --refresh`.
-- Instala ferramentas base: Git, GCC, Make, Neovim, ripgrep, fd, fzf, jq, tmux, btop, eza, bat, Zsh, Kitty, pgModeler e dependências de build para runtimes.
-- Instala DBeaver CE via RPM oficial, se `install_dbeaver` estiver ativo.
+- Instala ferramentas base: Git, GCC, Make, Neovim, ripgrep, fd, fzf, jq, tmux, btop, eza, bat, Zsh, Kitty e dependências de build para runtimes.
+- Instala pgModeler em versão fixada disponível no Fedora 44.
+- Instala DBeaver CE via RPM oficial versionado, se `install_dbeaver` estiver ativo.
 - Instala `mise`.
-- Instala runtimes/SDKs e ferramentas globais pelo `mise`: `.NET`, `Python`, `Node.js LTS`, `Go` e `lazygit`.
+- Instala runtimes/SDKs e ferramentas globais pelo `mise` com versões fixadas: `.NET`, `Python`, `Node.js LTS`, `Go` e `lazygit`.
 - Instala `pipx` e ferramentas Python usando o Python gerenciado pelo `mise`: `uv`, `poetry`, `ruff`, `black`, `mypy`, `ipython`, `httpie`, `cookiecutter` e `pre-commit`.
 - Instala ferramentas SRE quando disponíveis: `ansible`, `kubectl`, `helm`, `terraform` e `k9s`.
 - Instala `k9s` pelo release oficial do GitHub.
@@ -45,7 +46,7 @@ Primeiro revise `group_vars/all.yml`, principalmente estas flags:
 - `configure_gnome`: aplica tema e atalhos GNOME.
 - `configure_shell`: instala Oh My Zsh, plugins e altera shell padrão.
 - `install_lazyvim`: instala LazyVim em `~/.config/nvim`.
-- `install_dbeaver`: instala DBeaver CE via RPM oficial.
+- `install_dbeaver`: instala DBeaver CE via RPM oficial versionado.
 
 Depois execute:
 

@@ -16,11 +16,11 @@ install_dbeaver: true
 k9s_archive_url: "https://github.com/derailed/k9s/releases/latest/download/k9s_Linux_amd64.tar.gz"
 
 mise_tools:
-  - dotnet@latest
-  - go@latest
-  - lazygit@latest
-  - node@lts
-  - python@latest
+  - dotnet@10.0.400
+  - go@1.25.14
+  - lazygit@0.55.1
+  - node@24.20.0
+  - python@3.14.7
 
 python_cli_tools:
   - black
@@ -59,7 +59,6 @@ base_packages:
   - make
   - neovim
   - openssl-devel
-  - pgmodeler
   - procps-ng
   - python3-psutil
   - readline-devel
@@ -97,6 +96,8 @@ podman_packages:
   - skopeo
   - containers-common
 
+pgmodeler_package: pgmodeler-1.2.2-2.fc44.x86_64
+
 jetbrains_mono_version: "3.4.0"
 jetbrains_mono_url: "https://github.com/ryanoasis/nerd-fonts/releases/download/v{{ jetbrains_mono_version }}/JetBrainsMono.zip"
 mise_installer_url: https://mise.run
@@ -112,4 +113,7 @@ zsh_custom_dir: "{{ dev_home }}/.oh-my-zsh/custom"
 oh_my_zsh_installer_url: https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh
 oh_my_zsh_installer_path: /tmp/oh-my-zsh-installer.sh
 zsh_plugin_version: master
-dbeaver_rpm_url: https://dbeaver.io/files/dbeaver-ce-latest-linux-x86_64.rpm
+dbeaver_version: "26.2.0"
+dbeaver_rpm_url: "https://github.com/dbeaver/dbeaver/releases/download/{{ dbeaver_version }}/dbeaver-ce-{{ dbeaver_version }}-linux-x86_64.rpm"
+dbeaver_rpm_path: "/tmp/dbeaver-ce-{{ dbeaver_version }}-linux-x86_64.rpm"
+dbeaver_rpm_sha256: acb3bc2fc2c3547df154f2bec20b5dc6b7941bd420ccb778de94e43e7170947e
