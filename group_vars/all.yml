@@ -2,8 +2,8 @@
 # Ajuste este arquivo antes de executar se quiser um setup mais conservador.
 target_fedora_major_version: "44"
 
-dev_user: "{{ ansible_user_id }}"
-dev_home: "{{ ansible_env.HOME }}"
+dev_user: "{{ ansible_facts.user_id }}"
+dev_home: "{{ ansible_facts.env.HOME }}"
 
 run_system_upgrade: true
 install_docker_ce: true
@@ -58,6 +58,7 @@ base_packages:
   - neovim
   - openssl-devel
   - procps-ng
+  - python3-psutil
   - readline-devel
   - ripgrep
   - sqlite
@@ -95,9 +96,16 @@ podman_packages:
 
 jetbrains_mono_version: "3.4.0"
 jetbrains_mono_url: "https://github.com/ryanoasis/nerd-fonts/releases/download/v{{ jetbrains_mono_version }}/JetBrainsMono.zip"
+mise_installer_url: https://mise.run
+mise_installer_path: /tmp/mise-installer.sh
 dracula_theme_dir: "{{ dev_home }}/.themes/Dracula"
+dracula_gtk_version: master
 dracula_icon_url: "https://github.com/dracula/gtk/files/5214870/Dracula.zip"
 dracula_icon_archive: "/tmp/Dracula-icons.zip"
 dracula_icon_dir: "{{ dev_home }}/.icons/Dracula"
 lazyvim_dir: "{{ dev_home }}/.config/nvim"
+lazyvim_starter_version: main
 zsh_custom_dir: "{{ dev_home }}/.oh-my-zsh/custom"
+oh_my_zsh_installer_url: https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh
+oh_my_zsh_installer_path: /tmp/oh-my-zsh-installer.sh
+zsh_plugin_version: master

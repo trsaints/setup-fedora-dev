@@ -7,12 +7,14 @@
     - name: Validate supported Fedora release
       ansible.builtin.assert:
         that:
-          - ansible_distribution == "Fedora"
-          - ansible_distribution_major_version == target_fedora_major_version
-        fail_msg: "Este playbook foi feito para Fedora {{ target_fedora_major_version }}. Sistema detectado: {{ ansible_distribution }} {{ ansible_distribution_version }}."
+          - ansible_facts.distribution == "Fedora"
+          - ansible_facts.distribution_major_version == target_fedora_major_version
+        fail_msg: >-
+          Este playbook foi feito para Fedora {{ target_fedora_major_version }}.
+          Sistema detectado: {{ ansible_facts.distribution }} {{ ansible_facts.distribution_version }}.
 
   tasks:
-    - name: Upgrade system packages
+    - name: Upgrade system packages  # noqa: package-latest
       ansible.builtin.dnf:
         name: "*"
         state: latest
@@ -84,15 +86,21 @@
       become: true
       when: not k9s_binary.stat.exists
 
+    - name: Download mise installer
+      ansible.builtin.get_url:
+        url: "{{ mise_installer_url }}"
+        dest: "{{ mise_installer_path }}"
+        mode: "0755"
+
     - name: Install mise
-      ansible.builtin.shell: curl https://mise.run | sh
+      ansible.builtin.command: "{{ mise_installer_path }}"
       args:
         creates: "{{ dev_home }}/.local/bin/mise"
 
     - name: Install global runtimes with mise
       ansible.builtin.command: "{{ dev_home }}/.local/bin/mise use -g {{ item }}"
       environment:
-        PATH: "{{ dev_home }}/.local/bin:{{ ansible_env.PATH }}"
+        PATH: "{{ dev_home }}/.local/bin:{{ ansible_facts.env.PATH }}"
       loop: "{{ mise_tools }}"
       loop_control:
         label: "{{ item }}"
@@ -102,20 +110,20 @@
     - name: Reshim mise tools
       ansible.builtin.command: "{{ dev_home }}/.local/bin/mise reshim"
       environment:
-        PATH: "{{ dev_home }}/.local/bin:{{ ansible_env.PATH }}"
+        PATH: "{{ dev_home }}/.local/bin:{{ ansible_facts.env.PATH }}"
       changed_when: false
 
     - name: Install pip and pipx for the selected Python
       ansible.builtin.command: "{{ dev_home }}/.local/share/mise/shims/python -m pip install --user --upgrade pip pipx"
       environment:
-        PATH: "{{ dev_home }}/.local/share/mise/shims:{{ dev_home }}/.local/bin:{{ ansible_env.PATH }}"
+        PATH: "{{ dev_home }}/.local/share/mise/shims:{{ dev_home }}/.local/bin:{{ ansible_facts.env.PATH }}"
       register: pipx_bootstrap
       changed_when: "'Successfully installed' in pipx_bootstrap.stdout"
 
     - name: Ensure pipx path exists
       ansible.builtin.command: "{{ dev_home }}/.local/share/mise/shims/python -m pipx ensurepath"
       environment:
-        PATH: "{{ dev_home }}/.local/share/mise/shims:{{ dev_home }}/.local/bin:{{ ansible_env.PATH }}"
+        PATH: "{{ dev_home }}/.local/share/mise/shims:{{ dev_home }}/.local/bin:{{ ansible_facts.env.PATH }}"
       changed_when: false
 
     - name: Install Python CLI tools with pipx
@@ -123,7 +131,7 @@
       args:
         creates: "{{ dev_home }}/.local/share/pipx/venvs/{{ item }}"
       environment:
-        PATH: "{{ dev_home }}/.local/share/mise/shims:{{ dev_home }}/.local/bin:{{ ansible_env.PATH }}"
+        PATH: "{{ dev_home }}/.local/share/mise/shims:{{ dev_home }}/.local/bin:{{ ansible_facts.env.PATH }}"
       loop: "{{ python_cli_tools }}"
       loop_control:
         label: "{{ item }}"
@@ -152,9 +160,10 @@
       when: install_docker_ce and replace_podman_with_docker
 
     - name: Add Docker CE repository
-      ansible.builtin.command: dnf config-manager addrepo --from-repofile=https://download.docker.com/linux/fedora/docker-ce.repo
-      args:
-        creates: /etc/yum.repos.d/docker-ce.repo
+      ansible.builtin.get_url:
+        url: https://download.docker.com/linux/fedora/docker-ce.repo
+        dest: /etc/yum.repos.d/docker-ce.repo
+        mode: "0644"
       become: true
       when: install_docker_ce
 
@@ -238,6 +247,7 @@
         repo: https://github.com/dracula/gtk.git
         dest: "{{ dracula_theme_dir }}"
         depth: 1
+        version: "{{ dracula_gtk_version }}"
         update: true
       when: configure_gnome
 
@@ -282,17 +292,25 @@
       when: configure_gnome
 
     - name: Apply GNOME appearance settings
-      ansible.builtin.command: "gsettings set {{ item.schema }} {{ item.key }} {{ item.value }}"
+      community.general.dconf:
+        key: "{{ item.key }}"
+        value: "{{ item.value }}"
+        state: present
       loop:
-        - { schema: org.gnome.desktop.interface, key: gtk-theme, value: Dracula }
-        - { schema: org.gnome.desktop.wm.preferences, key: theme, value: Dracula }
-        - { schema: org.gnome.desktop.interface, key: icon-theme, value: Dracula }
-        - { schema: org.gnome.desktop.interface, key: color-scheme, value: prefer-dark }
-        - { schema: org.gnome.desktop.interface, key: monospace-font-name, value: "'JetBrainsMono Nerd Font 11'" }
-        - { schema: org.gnome.shell.extensions.user-theme, key: name, value: Dracula }
+        - key: /org/gnome/desktop/interface/gtk-theme
+          value: "'Dracula'"
+        - key: /org/gnome/desktop/wm/preferences/theme
+          value: "'Dracula'"
+        - key: /org/gnome/desktop/interface/icon-theme
+          value: "'Dracula'"
+        - key: /org/gnome/desktop/interface/color-scheme
+          value: "'prefer-dark'"
+        - key: /org/gnome/desktop/interface/monospace-font-name
+          value: "'JetBrainsMono Nerd Font 11'"
+        - key: /org/gnome/shell/extensions/user-theme/name
+          value: "'Dracula'"
       loop_control:
-        label: "{{ item.schema }} {{ item.key }}"
-      changed_when: false
+        label: "{{ item.key }}"
       failed_when: false
       when: configure_gnome
 
@@ -311,10 +329,21 @@
         backup: true
       when: configure_kitty
 
+    - name: Download Oh My Zsh installer
+      ansible.builtin.get_url:
+        url: "{{ oh_my_zsh_installer_url }}"
+        dest: "{{ oh_my_zsh_installer_path }}"
+        mode: "0755"
+      when: configure_shell
+
     - name: Install Oh My Zsh
-      ansible.builtin.shell: RUNZSH=no CHSH=no KEEP_ZSHRC=yes sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
+      ansible.builtin.command: "{{ oh_my_zsh_installer_path }}"
       args:
         creates: "{{ dev_home }}/.oh-my-zsh"
+      environment:
+        RUNZSH: "no"
+        CHSH: "no"
+        KEEP_ZSHRC: "yes"
       when: configure_shell
 
     - name: Ensure Oh My Zsh custom directories exist
@@ -334,13 +363,20 @@
         repo: "{{ item.repo }}"
         dest: "{{ item.dest }}"
         depth: 1
+        version: "{{ item.version | default(zsh_plugin_version) }}"
         update: true
       loop:
-        - { repo: "https://github.com/zsh-users/zsh-autosuggestions", dest: "{{ zsh_custom_dir }}/plugins/zsh-autosuggestions" }
-        - { repo: "https://github.com/zsh-users/zsh-syntax-highlighting.git", dest: "{{ zsh_custom_dir }}/plugins/zsh-syntax-highlighting" }
-        - { repo: "https://github.com/zsh-users/zsh-completions", dest: "{{ zsh_custom_dir }}/plugins/zsh-completions" }
-        - { repo: "https://github.com/marlonrichert/zsh-autocomplete.git", dest: "{{ zsh_custom_dir }}/plugins/zsh-autocomplete" }
-        - { repo: "https://github.com/dracula/zsh.git", dest: "{{ zsh_custom_dir }}/themes/dracula" }
+        - repo: https://github.com/zsh-users/zsh-autosuggestions
+          dest: "{{ zsh_custom_dir }}/plugins/zsh-autosuggestions"
+        - repo: https://github.com/zsh-users/zsh-syntax-highlighting.git
+          dest: "{{ zsh_custom_dir }}/plugins/zsh-syntax-highlighting"
+        - repo: https://github.com/zsh-users/zsh-completions
+          dest: "{{ zsh_custom_dir }}/plugins/zsh-completions"
+        - repo: https://github.com/marlonrichert/zsh-autocomplete.git
+          dest: "{{ zsh_custom_dir }}/plugins/zsh-autocomplete"
+          version: main
+        - repo: https://github.com/dracula/zsh.git
+          dest: "{{ zsh_custom_dir }}/themes/dracula"
       loop_control:
         label: "{{ item.dest }}"
       when: configure_shell
@@ -393,6 +429,7 @@
       ansible.builtin.git:
         repo: https://github.com/LazyVim/starter
         dest: "{{ lazyvim_dir }}"
+        version: "{{ lazyvim_starter_version }}"
         update: false
       when: install_lazyvim
 
@@ -404,23 +441,39 @@
       when: install_lazyvim
 
     - name: Configure GNOME shortcuts
-      ansible.builtin.command: "gsettings set {{ item.schema }} {{ item.key }} {{ item.value }}"
+      community.general.dconf:
+        key: "{{ item.key }}"
+        value: "{{ item.value }}"
+        state: present
       loop:
-        - { schema: org.gnome.desktop.wm.keybindings, key: switch-applications, value: "\"['<Super>Tab']\"" }
-        - { schema: org.gnome.desktop.wm.keybindings, key: switch-windows, value: "\"['<Alt>Tab']\"" }
-        - { schema: org.gnome.desktop.wm.keybindings, key: close, value: "\"['<Super>q']\"" }
-        - { schema: org.gnome.settings-daemon.plugins.media-keys, key: home, value: "\"['<Super>e']\"" }
-        - { schema: org.gnome.settings-daemon.plugins.media-keys, key: control-center, value: "\"['<Super>i']\"" }
-        - { schema: org.gnome.settings-daemon.plugins.media-keys, key: custom-keybindings, value: "\"['/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom0/', '/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom1/']\"" }
-        - { schema: org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom0/, key: name, value: "'Terminal'" }
-        - { schema: org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom0/, key: command, value: "'kitty'" }
-        - { schema: org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom0/, key: binding, value: "'<Super>Return'" }
-        - { schema: org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom1/, key: name, value: "'Browser'" }
-        - { schema: org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom1/, key: command, value: "'xdg-open https://www.google.com'" }
-        - { schema: org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom1/, key: binding, value: "'<Super>b'" }
+        - key: /org/gnome/desktop/wm/keybindings/switch-applications
+          value: "['<Super>Tab']"
+        - key: /org/gnome/desktop/wm/keybindings/switch-windows
+          value: "['<Alt>Tab']"
+        - key: /org/gnome/desktop/wm/keybindings/close
+          value: "['<Super>q']"
+        - key: /org/gnome/settings-daemon/plugins/media-keys/home
+          value: "['<Super>e']"
+        - key: /org/gnome/settings-daemon/plugins/media-keys/control-center
+          value: "['<Super>i']"
+        - key: /org/gnome/settings-daemon/plugins/media-keys/custom-keybindings
+          value: >-
+            ['/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom0/',
+            '/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom1/']
+        - key: /org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom0/name
+          value: "'Terminal'"
+        - key: /org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom0/command
+          value: "'kitty'"
+        - key: /org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom0/binding
+          value: "'<Super>Return'"
+        - key: /org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom1/name
+          value: "'Browser'"
+        - key: /org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom1/command
+          value: "'xdg-open https://www.google.com'"
+        - key: /org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom1/binding
+          value: "'<Super>b'"
       loop_control:
-        label: "{{ item.schema }} {{ item.key }}"
-      changed_when: false
+        label: "{{ item.key }}"
       failed_when: false
       when: configure_gnome
 
