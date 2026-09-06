@@ -1,0 +1,360 @@
+---
+- name: Setup Fedora 44 developer workstation
+  hosts: local
+  gather_facts: true
+
+  pre_tasks:
+    - name: Validate supported Fedora release
+      ansible.builtin.assert:
+        that:
+          - ansible_distribution == "Fedora"
+          - ansible_distribution_major_version == target_fedora_major_version
+        fail_msg: "Este playbook foi feito para Fedora {{ target_fedora_major_version }}. Sistema detectado: {{ ansible_distribution }} {{ ansible_distribution_version }}."
+
+  tasks:
+    - name: Upgrade system packages
+      ansible.builtin.dnf:
+        name: "*"
+        state: latest
+        update_cache: true
+      become: true
+      when: run_system_upgrade
+
+    - name: Install base packages
+      ansible.builtin.dnf:
+        name: "{{ base_packages }}"
+        state: present
+        update_cache: true
+      become: true
+
+    - name: Check SRE package availability
+      ansible.builtin.command: "dnf repoquery --quiet --available {{ item }}"
+      loop: "{{ sre_packages }}"
+      register: sre_package_query_results
+      changed_when: false
+      failed_when: false
+
+    - name: Show unavailable SRE packages
+      ansible.builtin.debug:
+        msg: "Pacote SRE indisponivel no dnf atual: {{ item.item }}"
+      loop: "{{ sre_package_query_results.results }}"
+      when: item.rc != 0
+
+    - name: Install available SRE packages
+      ansible.builtin.dnf:
+        name: "{{ item.item }}"
+        state: present
+      become: true
+      loop: "{{ sre_package_query_results.results }}"
+      when: item.rc == 0
+
+    - name: Check k9s binary
+      ansible.builtin.stat:
+        path: /usr/local/bin/k9s
+      register: k9s_binary
+
+    - name: Create temporary k9s extraction directory
+      ansible.builtin.tempfile:
+        state: directory
+        suffix: k9s
+      register: k9s_tempdir
+      when: not k9s_binary.stat.exists
+
+    - name: Download and extract k9s
+      ansible.builtin.unarchive:
+        src: "{{ k9s_archive_url }}"
+        dest: "{{ k9s_tempdir.path }}"
+        remote_src: true
+      when: not k9s_binary.stat.exists
+
+    - name: Install k9s binary
+      ansible.builtin.copy:
+        src: "{{ k9s_tempdir.path }}/k9s"
+        dest: /usr/local/bin/k9s
+        mode: "0755"
+        remote_src: true
+      become: true
+      when: not k9s_binary.stat.exists
+
+    - name: Install mise
+      ansible.builtin.shell: curl https://mise.run | sh
+      args:
+        creates: "{{ dev_home }}/.local/bin/mise"
+
+    - name: Install global runtimes with mise
+      ansible.builtin.command: "{{ dev_home }}/.local/bin/mise use -g {{ item }}"
+      environment:
+        PATH: "{{ dev_home }}/.local/bin:{{ ansible_env.PATH }}"
+      loop: "{{ mise_tools }}"
+      register: mise_results
+      changed_when: "'installed' in mise_results.stdout or 'updated' in mise_results.stdout or 'set' in mise_results.stdout"
+
+    - name: Reshim mise tools
+      ansible.builtin.command: "{{ dev_home }}/.local/bin/mise reshim"
+      environment:
+        PATH: "{{ dev_home }}/.local/bin:{{ ansible_env.PATH }}"
+      changed_when: false
+
+    - name: Install pip and pipx for the selected Python
+      ansible.builtin.command: "{{ dev_home }}/.local/share/mise/shims/python -m pip install --user --upgrade pip pipx"
+      environment:
+        PATH: "{{ dev_home }}/.local/share/mise/shims:{{ dev_home }}/.local/bin:{{ ansible_env.PATH }}"
+      register: pipx_bootstrap
+      changed_when: "'Successfully installed' in pipx_bootstrap.stdout"
+
+    - name: Ensure pipx path exists
+      ansible.builtin.command: "{{ dev_home }}/.local/share/mise/shims/python -m pipx ensurepath"
+      environment:
+        PATH: "{{ dev_home }}/.local/share/mise/shims:{{ dev_home }}/.local/bin:{{ ansible_env.PATH }}"
+      changed_when: false
+
+    - name: Install Python CLI tools with pipx
+      ansible.builtin.command: "{{ dev_home }}/.local/bin/pipx install {{ item }}"
+      args:
+        creates: "{{ dev_home }}/.local/share/pipx/venvs/{{ item }}"
+      environment:
+        PATH: "{{ dev_home }}/.local/share/mise/shims:{{ dev_home }}/.local/bin:{{ ansible_env.PATH }}"
+      loop: "{{ python_cli_tools }}"
+
+    - name: Disable podman socket before replacement
+      ansible.builtin.systemd:
+        name: podman.socket
+        enabled: false
+        state: stopped
+      become: true
+      failed_when: false
+      when: install_docker_ce and replace_podman_with_docker
+
+    - name: Remove Podman stack before Docker CE install
+      ansible.builtin.dnf:
+        name: "{{ podman_packages }}"
+        state: absent
+      become: true
+      when: install_docker_ce and replace_podman_with_docker
+
+    - name: Remove containers nodocker marker
+      ansible.builtin.file:
+        path: /etc/containers/nodocker
+        state: absent
+      become: true
+      when: install_docker_ce and replace_podman_with_docker
+
+    - name: Add Docker CE repository
+      ansible.builtin.command: dnf config-manager addrepo --from-repofile=https://download.docker.com/linux/fedora/docker-ce.repo
+      args:
+        creates: /etc/yum.repos.d/docker-ce.repo
+      become: true
+      when: install_docker_ce
+
+    - name: Install Docker CE packages
+      ansible.builtin.dnf:
+        name: "{{ docker_packages }}"
+        state: present
+        update_cache: true
+      become: true
+      when: install_docker_ce
+
+    - name: Enable Docker service
+      ansible.builtin.systemd:
+        name: docker
+        enabled: true
+        state: started
+      become: true
+      when: install_docker_ce
+
+    - name: Add developer user to docker group
+      ansible.builtin.user:
+        name: "{{ dev_user }}"
+        groups: docker
+        append: true
+      become: true
+      when: install_docker_ce
+
+    - name: Ensure font directory exists
+      ansible.builtin.file:
+        path: "{{ dev_home }}/.local/share/fonts/JetBrainsMonoNF"
+        state: directory
+        mode: "0755"
+
+    - name: Download JetBrains Mono Nerd Font
+      ansible.builtin.get_url:
+        url: "{{ jetbrains_mono_url }}"
+        dest: "/tmp/JetBrainsMono-{{ jetbrains_mono_version }}.zip"
+        mode: "0644"
+
+    - name: Install JetBrains Mono Nerd Font
+      ansible.builtin.unarchive:
+        src: "/tmp/JetBrainsMono-{{ jetbrains_mono_version }}.zip"
+        dest: "{{ dev_home }}/.local/share/fonts/JetBrainsMonoNF"
+        remote_src: true
+        creates: "{{ dev_home }}/.local/share/fonts/JetBrainsMonoNF/JetBrainsMonoNerdFont-Regular.ttf"
+      notify: Rebuild font cache
+
+    - name: Install Dracula GNOME dependencies
+      ansible.builtin.dnf:
+        name:
+          - gtk-murrine-engine
+          - sassc
+        state: present
+      become: true
+      when: configure_gnome
+
+    - name: Ensure themes directory exists
+      ansible.builtin.file:
+        path: "{{ dev_home }}/.themes"
+        state: directory
+        mode: "0755"
+      when: configure_gnome
+
+    - name: Install Dracula GTK theme
+      ansible.builtin.git:
+        repo: https://github.com/dracula/gtk.git
+        dest: "{{ dracula_theme_dir }}"
+        depth: 1
+        update: true
+      when: configure_gnome
+
+    - name: Apply GNOME appearance settings
+      ansible.builtin.command: "gsettings set {{ item.schema }} {{ item.key }} {{ item.value }}"
+      loop:
+        - { schema: org.gnome.desktop.interface, key: gtk-theme, value: Dracula }
+        - { schema: org.gnome.desktop.wm.preferences, key: theme, value: Dracula }
+        - { schema: org.gnome.desktop.interface, key: color-scheme, value: prefer-dark }
+        - { schema: org.gnome.desktop.interface, key: monospace-font-name, value: "'JetBrainsMono Nerd Font 11'" }
+      changed_when: false
+      failed_when: false
+      when: configure_gnome
+
+    - name: Ensure Kitty config directory exists
+      ansible.builtin.file:
+        path: "{{ dev_home }}/.config/kitty"
+        state: directory
+        mode: "0755"
+      when: configure_kitty
+
+    - name: Configure Kitty
+      ansible.builtin.template:
+        src: templates/kitty.conf.j2
+        dest: "{{ dev_home }}/.config/kitty/kitty.conf"
+        mode: "0644"
+        backup: true
+      when: configure_kitty
+
+    - name: Install Oh My Zsh
+      ansible.builtin.shell: RUNZSH=no CHSH=no KEEP_ZSHRC=yes sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
+      args:
+        creates: "{{ dev_home }}/.oh-my-zsh"
+      when: configure_shell
+
+    - name: Ensure Oh My Zsh custom directories exist
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: directory
+        mode: "0755"
+      loop:
+        - "{{ zsh_custom_dir }}/plugins"
+        - "{{ zsh_custom_dir }}/themes"
+      when: configure_shell
+
+    - name: Install Zsh plugins and theme
+      ansible.builtin.git:
+        repo: "{{ item.repo }}"
+        dest: "{{ item.dest }}"
+        depth: 1
+        update: true
+      loop:
+        - { repo: "https://github.com/zsh-users/zsh-autosuggestions", dest: "{{ zsh_custom_dir }}/plugins/zsh-autosuggestions" }
+        - { repo: "https://github.com/zsh-users/zsh-syntax-highlighting.git", dest: "{{ zsh_custom_dir }}/plugins/zsh-syntax-highlighting" }
+        - { repo: "https://github.com/zsh-users/zsh-completions", dest: "{{ zsh_custom_dir }}/plugins/zsh-completions" }
+        - { repo: "https://github.com/marlonrichert/zsh-autocomplete.git", dest: "{{ zsh_custom_dir }}/plugins/zsh-autocomplete" }
+        - { repo: "https://github.com/dracula/zsh.git", dest: "{{ zsh_custom_dir }}/themes/dracula" }
+      when: configure_shell
+
+    - name: Link Dracula Zsh theme
+      ansible.builtin.file:
+        src: "{{ zsh_custom_dir }}/themes/dracula/dracula.zsh-theme"
+        dest: "{{ zsh_custom_dir }}/themes/dracula.zsh-theme"
+        state: link
+      when: configure_shell
+
+    - name: Configure Zsh
+      ansible.builtin.template:
+        src: templates/zshrc.j2
+        dest: "{{ dev_home }}/.zshrc"
+        mode: "0644"
+        backup: true
+      when: configure_shell
+
+    - name: Set Zsh as default shell
+      ansible.builtin.user:
+        name: "{{ dev_user }}"
+        shell: /usr/bin/zsh
+      become: true
+      when: configure_shell
+
+    - name: Check LazyVim target
+      ansible.builtin.stat:
+        path: "{{ lazyvim_dir }}"
+      register: lazyvim_stat
+      when: install_lazyvim
+
+    - name: Check LazyVim git metadata
+      ansible.builtin.stat:
+        path: "{{ lazyvim_dir }}/.git"
+      register: lazyvim_git_stat
+      when:
+        - install_lazyvim
+        - lazyvim_stat.stat.exists
+
+    - name: Stop before overwriting unmanaged Neovim config
+      ansible.builtin.fail:
+        msg: "{{ lazyvim_dir }} ja existe e nao e um repositorio Git. Faca backup/remova manualmente ou desative install_lazyvim."
+      when:
+        - install_lazyvim
+        - lazyvim_stat.stat.exists
+        - not lazyvim_git_stat.stat.exists
+
+    - name: Install LazyVim starter
+      ansible.builtin.git:
+        repo: https://github.com/LazyVim/starter
+        dest: "{{ lazyvim_dir }}"
+        update: false
+      when: install_lazyvim
+
+    - name: Sync LazyVim plugins
+      ansible.builtin.command: nvim --headless '+Lazy! sync' +qa
+      register: lazyvim_sync
+      changed_when: false
+      failed_when: false
+      when: install_lazyvim
+
+    - name: Configure GNOME shortcuts
+      ansible.builtin.command: "gsettings set {{ item.schema }} {{ item.key }} {{ item.value }}"
+      loop:
+        - { schema: org.gnome.desktop.wm.keybindings, key: switch-applications, value: "\"['<Super>Tab']\"" }
+        - { schema: org.gnome.desktop.wm.keybindings, key: switch-windows, value: "\"['<Alt>Tab']\"" }
+        - { schema: org.gnome.desktop.wm.keybindings, key: close, value: "\"['<Super>q']\"" }
+        - { schema: org.gnome.settings-daemon.plugins.media-keys, key: home, value: "\"['<Super>e']\"" }
+        - { schema: org.gnome.settings-daemon.plugins.media-keys, key: control-center, value: "\"['<Super>i']\"" }
+        - { schema: org.gnome.settings-daemon.plugins.media-keys, key: custom-keybindings, value: "\"['/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom0/', '/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom1/']\"" }
+        - { schema: org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom0/, key: name, value: "'Terminal'" }
+        - { schema: org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom0/, key: command, value: "'kitty'" }
+        - { schema: org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom0/, key: binding, value: "'<Super>Return'" }
+        - { schema: org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom1/, key: name, value: "'Browser'" }
+        - { schema: org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom1/, key: command, value: "'xdg-open https://www.google.com'" }
+        - { schema: org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom1/, key: binding, value: "'<Super>b'" }
+      changed_when: false
+      failed_when: false
+      when: configure_gnome
+
+  handlers:
+    - name: Rebuild font cache
+      ansible.builtin.command: "fc-cache -fv {{ dev_home }}/.local/share/fonts"
+      changed_when: false
+
+  post_tasks:
+    - name: Print next steps
+      ansible.builtin.debug:
+        msg:
+          - "Reinicie a sessao para aplicar shell, grupo docker, fonte e tema."
+          - "Valide com: docker run hello-world; dotnet --info; python --version; uv --version; poetry --version; nvim"

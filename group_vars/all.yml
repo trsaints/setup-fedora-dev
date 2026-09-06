@@ -1,0 +1,100 @@
+---
+# Ajuste este arquivo antes de executar se quiser um setup mais conservador.
+target_fedora_major_version: "44"
+
+dev_user: "{{ ansible_user_id }}"
+dev_home: "{{ ansible_env.HOME }}"
+
+run_system_upgrade: true
+install_docker_ce: true
+replace_podman_with_docker: true
+configure_gnome: true
+configure_shell: true
+configure_kitty: true
+install_lazyvim: true
+k9s_archive_url: "https://github.com/derailed/k9s/releases/latest/download/k9s_Linux_amd64.tar.gz"
+
+mise_tools:
+  - dotnet@latest
+  - go@latest
+  - node@lts
+  - python@latest
+
+python_cli_tools:
+  - black
+  - cookiecutter
+  - httpie
+  - ipython
+  - mypy
+  - poetry
+  - pre-commit
+  - ruff
+  - uv
+
+base_packages:
+  - "@development-tools"
+  - ShellCheck
+  - bat
+  - bzip2-devel
+  - btop
+  - ca-certificates
+  - curl
+  - dconf-editor
+  - dnf-plugins-core
+  - eza
+  - fastfetch
+  - fd-find
+  - fzf
+  - gcc
+  - gcc-c++
+  - git
+  - gnome-extensions-app
+  - gnome-tweaks
+  - htop
+  - jq
+  - kitty
+  - libffi-devel
+  - make
+  - neovim
+  - openssl-devel
+  - procps-ng
+  - readline-devel
+  - ripgrep
+  - sqlite
+  - sqlite-devel
+  - tar
+  - tmux
+  - tk-devel
+  - unzip
+  - util-linux-user
+  - wget
+  - which
+  - xz-devel
+  - zlib-devel
+  - zsh
+
+sre_packages:
+  - ansible
+  - kubernetes-client
+  - helm
+  - terraform
+
+docker_packages:
+  - docker-ce
+  - docker-ce-cli
+  - containerd.io
+  - docker-buildx-plugin
+  - docker-compose-plugin
+
+podman_packages:
+  - podman
+  - podman-docker
+  - buildah
+  - skopeo
+  - containers-common
+
+jetbrains_mono_version: "3.4.0"
+jetbrains_mono_url: "https://github.com/ryanoasis/nerd-fonts/releases/download/v{{ jetbrains_mono_version }}/JetBrainsMono.zip"
+dracula_theme_dir: "{{ dev_home }}/.themes/Dracula"
+lazyvim_dir: "{{ dev_home }}/.config/nvim"
+zsh_custom_dir: "{{ dev_home }}/.oh-my-zsh/custom"

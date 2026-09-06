@@ -1,0 +1,67 @@
+# Managed by Ansible: setup-fedora-dev
+font_family JetBrainsMono Nerd Font
+bold_font auto
+italic_font auto
+bold_italic_font auto
+font_size 11.0
+
+enable_audio_bell no
+confirm_os_window_close 0
+remember_window_size yes
+initial_window_width 120c
+initial_window_height 34c
+window_padding_width 8
+tab_bar_style powerline
+tab_powerline_style slanted
+active_tab_font_style bold
+inactive_tab_font_style normal
+enabled_layouts splits,tall,stack,fat,grid,horizontal,vertical
+
+# Dracula Theme
+foreground #f8f8f2
+background #282a36
+selection_foreground #ffffff
+selection_background #44475a
+url_color #8be9fd
+cursor #f8f8f2
+active_border_color #bd93f9
+inactive_border_color #44475a
+bell_border_color #ffb86c
+active_tab_foreground #282a36
+active_tab_background #bd93f9
+inactive_tab_foreground #f8f8f2
+inactive_tab_background #44475a
+color0 #21222c
+color1 #ff5555
+color2 #50fa7b
+color3 #f1fa8c
+color4 #bd93f9
+color5 #ff79c6
+color6 #8be9fd
+color7 #f8f8f2
+color8 #6272a4
+color9 #ff6e6e
+color10 #69ff94
+color11 #ffffa5
+color12 #d6acff
+color13 #ff92df
+color14 #a4ffff
+color15 #ffffff
+
+# Splits, tabs and navigation
+map ctrl+shift+enter launch --cwd=current
+map ctrl+shift+right launch --location=hsplit --cwd=current
+map ctrl+shift+down launch --location=vsplit --cwd=current
+map ctrl+shift+h neighboring_window left
+map ctrl+shift+j neighboring_window down
+map ctrl+shift+k neighboring_window up
+map ctrl+shift+l neighboring_window right
+map ctrl+shift+w close_window
+map ctrl+shift+t launch --type=tab --cwd=current
+map ctrl+shift+q close_tab
+map ctrl+shift+left previous_tab
+map ctrl+shift+up next_tab
+
+# Make Ctrl+Backspace delete the previous word in shells/readline apps.
+map ctrl+backspace send_text all \x17
+map ctrl+delete send_text all \x1bd
