@@ -89,12 +89,15 @@ docker_packages:
   - docker-buildx-plugin
   - docker-compose-plugin
 
+# Pacotes presentes sao removidos em uma transacao, junto com seus dependentes.
 podman_packages:
   - podman
   - podman-docker
   - buildah
   - skopeo
   - containers-common
+  - containers-common-extra
+  - toolbox
 
 pgmodeler_package: pgmodeler-1.2.2-2.fc44.x86_64
 

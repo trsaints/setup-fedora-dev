@@ -16,7 +16,7 @@ O script Bash original continua em `setup-fedora-dev.sh` como referência, mas o
 - Instala ferramentas SRE quando disponíveis: `ansible`, `kubectl`, `helm`, `terraform` e `k9s`.
 - Instala `k9s` pelo release oficial do GitHub.
 - Instala Docker CE oficial e adiciona seu usuário ao grupo `docker`, se `install_docker_ce` estiver ativo.
-- Remove Podman, Buildah, Skopeo e `podman-docker` somente se `replace_podman_with_docker` estiver ativo. Essa flag vem ativa para preservar o comportamento do script original.
+- Remove Podman, Buildah, Skopeo, `podman-docker`, `containers-common`, `containers-common-extra`, Toolbox e dependentes antes do Docker, se `install_docker_ce` e `replace_podman_with_docker` estiverem ativos. Pacotes ausentes são pulados. A substituição vem ativa por padrão.
 - Instala JetBrains Mono Nerd Font.
 - Instala Dracula GTK Theme e aplica tema escuro no GNOME.
 - Configura Kitty com Dracula, JetBrains Mono Nerd Font, splits, tabs e `Ctrl+Backspace` para apagar palavra.
@@ -42,7 +42,7 @@ Primeiro revise `group_vars/all.yml`, principalmente estas flags:
 
 - `run_system_upgrade`: atualiza todos os pacotes do sistema.
 - `install_docker_ce`: instala Docker CE oficial.
-- `replace_podman_with_docker`: remove Podman/Buildah/Skopeo antes de instalar Docker. Desative se quiser manter o stack padrão do Fedora.
+- `replace_podman_with_docker`: remove a stack Podman e ferramentas que dependem dela (incluindo Toolbox) antes de instalar Docker. Desative se quiser manter a stack padrão do Fedora.
 - `configure_gnome`: aplica tema e atalhos GNOME.
 - `configure_shell`: instala Oh My Zsh, plugins e altera shell padrão.
 - `install_lazyvim`: instala LazyVim em `~/.config/nvim`.
@@ -73,6 +73,26 @@ ansible-playbook playbook.yml --check --ask-become-pass
 ```
 
 Algumas tarefas que baixam instaladores, executam `mise`, `pipx`, `gsettings` ou `nvim` podem ter limitações no modo `--check`.
+
+### Substituição do Podman
+
+A remoção consulta os RPMs instalados e envia somente os pacotes presentes ao DNF, em uma única transação. `allowerasing: true` permite remover dependentes que impediriam a operação, como Toolbox e outros consumidores de `containers-common`. `autoremove: false` evita uma limpeza global de pacotes órfãos; isso **não** impede a remoção dos dependentes necessários. A transação é exibida no log e falhas reais não são ignoradas. Se nenhum pacote da lista estiver instalado, a remoção é pulada e o playbook continua para o Docker.
+
+Para inspecionar somente essa etapa sem remover pacotes:
+
+```bash
+./bootstrap.sh --tags podman_cleanup --check
+```
+
+Revise a lista de remoção apresentada, pois outros aplicativos dependentes também podem ser removidos. Depois execute `./bootstrap.sh` normalmente; não é necessário desfazer as etapas que já concluíram. Para executar somente a remoção, use `./bootstrap.sh --tags podman_cleanup` (isso não instala Docker).
+
+O “wipe” é de **pacotes**, não de dados: não executa `podman system reset`, `prune` nem apaga diretórios de volumes, imagens ou containers. Esses dados não são migrados para Docker. Pare workloads Podman, inclusive os rootless, e faça backup antes da troca; parar o socket de sistema não encerra todos os containers. Se a instalação do Docker falhar depois da remoção, a máquina poderá ficar sem runtime até a correção. Reinstalar os pacotes removidos não equivale a um rollback completo dos workloads.
+
+Os testes de regressão dessa etapa não alteram o sistema. Veja as dependências e limitações em [`tests/README.md`](tests/README.md):
+
+```bash
+PYTHONDONTWRITEBYTECODE=1 /usr/bin/python3 -m unittest discover -s tests -v
+```
 
 ## Depois De Executar
 

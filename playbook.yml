@@ -158,28 +158,64 @@
       loop_control:
         label: "{{ item }}"
 
-    - name: Disable podman socket before replacement
-      ansible.builtin.systemd:
-        name: podman.socket
-        enabled: false
-        state: stopped
-      become: true
-      failed_when: false
+    - name: Replace Podman stack before Docker CE install
       when: install_docker_ce and replace_podman_with_docker
+      tags: podman_cleanup
+      block:
+        - name: Gather installed RPM packages before Podman replacement
+          ansible.builtin.package_facts:
+            manager: rpm
 
-    - name: Remove Podman stack before Docker CE install
-      ansible.builtin.dnf:
-        name: "{{ podman_packages }}"
-        state: absent
-      become: true
-      when: install_docker_ce and replace_podman_with_docker
+        - name: Select installed Podman stack packages
+          ansible.builtin.set_fact:
+            installed_podman_packages: "{{ podman_packages | intersect(ansible_facts.packages.keys() | list) | sort }}"
 
-    - name: Remove containers nodocker marker
-      ansible.builtin.file:
-        path: /etc/containers/nodocker
-        state: absent
-      become: true
-      when: install_docker_ce and replace_podman_with_docker
+        - name: Check Podman socket unit before replacement
+          # service_facts only lists services, not socket units.
+          ansible.builtin.command:
+            argv:
+              - systemctl
+              - show
+              - --property=LoadState
+              - --value
+              - podman.socket
+          register: podman_socket_load_state
+          changed_when: false
+          check_mode: false
+          when: installed_podman_packages | length > 0
+
+        - name: Disable podman socket before replacement
+          ansible.builtin.systemd:
+            name: podman.socket
+            enabled: false
+            state: stopped
+          become: true
+          when:
+            - installed_podman_packages | length > 0
+            - podman_socket_load_state.stdout | trim != 'not-found'
+
+        - name: Remove Podman stack before Docker CE install
+          ansible.builtin.dnf:
+            name: "{{ installed_podman_packages }}"
+            state: absent
+            # DNF5 needs this to remove reverse dependencies such as toolbox.
+            allowerasing: true
+            # Do not perform a system-wide cleanup of unrelated orphan packages.
+            autoremove: false
+          become: true
+          register: podman_removal
+          when: installed_podman_packages | length > 0
+
+        - name: Show Podman removal transaction
+          ansible.builtin.debug:
+            var: podman_removal.results
+          when: installed_podman_packages | length > 0
+
+        - name: Remove containers nodocker marker
+          ansible.builtin.file:
+            path: /etc/containers/nodocker
+            state: absent
+          become: true
 
     - name: Add Docker CE repository
       ansible.builtin.get_url:
