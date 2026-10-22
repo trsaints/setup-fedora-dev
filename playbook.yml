@@ -484,11 +484,22 @@
       when: install_lazyvim
 
     - name: Configure LazyVim language extras
-      ansible.builtin.template:
-        src: templates/lazyvim-extras.lua.j2
-        dest: "{{ lazyvim_dir }}/lua/plugins/extras.lua"
-        mode: "0644"
+      ansible.builtin.blockinfile:
+        path: "{{ lazyvim_dir }}/lua/config/lazy.lua"
+        insertafter: '^    \{ "LazyVim/LazyVim", import = "lazyvim\.plugins" \},$'
+        marker: "    -- {mark} Ansible LazyVim extras"
+        block: |2
+              { import = "lazyvim.plugins.extras.lang.python" },
+              { import = "lazyvim.plugins.extras.lang.dotnet" },
+              { import = "lazyvim.plugins.extras.dap.core" },
+              { import = "lazyvim.plugins.extras.test.core" },
         backup: true
+      when: install_lazyvim
+
+    - name: Remove legacy LazyVim extras plugin file
+      ansible.builtin.file:
+        path: "{{ lazyvim_dir }}/lua/plugins/extras.lua"
+        state: absent
       when: install_lazyvim
 
     - name: Sync LazyVim plugins

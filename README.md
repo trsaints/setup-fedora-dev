@@ -32,7 +32,6 @@ O script Bash original continua em `setup-fedora-dev.sh` como referência, mas o
 - `ansible.cfg`: configuração do Ansible para execução local.
 - `bootstrap.sh`: instala `ansible-core` se necessário e executa o playbook.
 - `templates/kitty.conf.j2`: configuração do Kitty.
-- `templates/lazyvim-extras.lua.j2`: extras de linguagem habilitados no LazyVim.
 - `templates/zshrc.j2`: configuração do Zsh.
 - `logs/`: diretório local para logs de execução, não versionados.
 
