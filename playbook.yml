@@ -286,13 +286,6 @@
         mode: "0755"
       when: configure_gnome
 
-    - name: Ensure icons directory exists
-      ansible.builtin.file:
-        path: "{{ dev_home }}/.icons"
-        state: directory
-        mode: "0755"
-      when: configure_gnome
-
     - name: Ensure GTK4 config directory exists
       ansible.builtin.file:
         path: "{{ dev_home }}/.config/gtk-4.0"
@@ -328,19 +321,11 @@
         - gtk-dark.css
       when: configure_gnome
 
-    - name: Download Dracula icon theme
-      ansible.builtin.get_url:
-        url: "{{ dracula_icon_url }}"
-        dest: "{{ dracula_icon_archive }}"
-        mode: "0644"
-      when: configure_gnome
-
-    - name: Install Dracula icon theme
-      ansible.builtin.unarchive:
-        src: "{{ dracula_icon_archive }}"
-        dest: "{{ dev_home }}/.icons"
-        remote_src: true
-        creates: "{{ dracula_icon_dir }}/index.theme"
+    - name: Install icon theme package
+      ansible.builtin.dnf:
+        name: "{{ icon_theme_package }}"
+        state: present
+      become: true
       when: configure_gnome
 
     - name: Enable GNOME user theme extension
@@ -360,7 +345,7 @@
         - key: /org/gnome/desktop/wm/preferences/theme
           value: "'Dracula'"
         - key: /org/gnome/desktop/interface/icon-theme
-          value: "'Dracula'"
+          value: "'{{ icon_theme_name }}'"
         - key: /org/gnome/desktop/interface/color-scheme
           value: "'prefer-dark'"
         - key: /org/gnome/desktop/interface/monospace-font-name

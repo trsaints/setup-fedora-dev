@@ -107,9 +107,8 @@ mise_installer_url: https://mise.run
 mise_installer_path: /tmp/mise-installer.sh
 dracula_theme_dir: "{{ dev_home }}/.themes/Dracula"
 dracula_gtk_version: master
-dracula_icon_url: "https://github.com/dracula/gtk/files/5214870/Dracula.zip"
-dracula_icon_archive: "/tmp/Dracula-icons.zip"
-dracula_icon_dir: "{{ dev_home }}/.icons/Dracula"
+icon_theme_package: candy-icon-theme
+icon_theme_name: "Candy"
 lazyvim_dir: "{{ dev_home }}/.config/nvim"
 lazyvim_starter_version: main
 zsh_custom_dir: "{{ dev_home }}/.oh-my-zsh/custom"

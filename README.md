@@ -1,6 +1,6 @@
 # Setup Fedora Dev com Ansible
 
-Playbook local para configurar Fedora 44 para desenvolvimento fullstack com runtimes/SDKs gerenciados pelo `mise`, Docker CE, LazyVim, Kitty, GNOME, Dracula Theme, JetBrains Mono Nerd Font e ferramentas úteis para Ciência da Computação e SRE.
+Playbook local para configurar Fedora 44 para desenvolvimento fullstack com runtimes/SDKs gerenciados pelo `mise`, Docker CE, LazyVim, Kitty, GNOME, Dracula GTK Theme + Candy Icons, JetBrains Mono Nerd Font e ferramentas úteis para Ciência da Computação e SRE.
 
 O script Bash original continua em `setup-fedora-dev.sh` como referência, mas o fluxo recomendado agora é o Ansible.
 
@@ -18,7 +18,7 @@ O script Bash original continua em `setup-fedora-dev.sh` como referência, mas o
 - Instala Docker CE oficial e adiciona seu usuário ao grupo `docker`, se `install_docker_ce` estiver ativo.
 - Remove Podman, Buildah, Skopeo, `podman-docker`, `containers-common`, `containers-common-extra`, Toolbox e dependentes antes do Docker, se `install_docker_ce` e `replace_podman_with_docker` estiverem ativos. Pacotes ausentes são pulados. A substituição vem ativa por padrão.
 - Instala JetBrains Mono Nerd Font.
-- Instala Dracula GTK Theme e aplica tema escuro no GNOME.
+- Instala Dracula GTK Theme + Candy Icons (pacote `candy-icon-theme` do Fedora) e aplica tema escuro no GNOME.
 - Configura Kitty com Dracula, JetBrains Mono Nerd Font, splits, tabs e `Ctrl+Backspace` para apagar palavra.
 - Configura Zsh com Oh My Zsh, Dracula, autocomplete, autosuggestions e syntax highlighting.
 - Instala LazyVim em `~/.config/nvim` com extras para Python, .NET/C#, debug/testes e `lazygit` disponível para integrações Git.
