@@ -1,0 +1,16 @@
+set shell := ["bash", "-cu"]
+
+up:
+    docker compose up -d
+
+down:
+    docker compose down
+
+reset:
+    docker compose down --volumes --remove-orphans
+
+logs:
+    docker compose logs --follow
+
+validate:
+    docker compose config --quiet

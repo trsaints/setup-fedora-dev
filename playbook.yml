@@ -13,6 +13,13 @@
           Este playbook foi feito para Fedora {{ target_fedora_major_version }}.
           Sistema detectado: {{ ansible_facts.distribution }} {{ ansible_facts.distribution_version }}.
 
+    - name: Validate observability lab prerequisites
+      ansible.builtin.assert:
+        that:
+          - install_docker_ce
+        fail_msg: "O laboratorio de observabilidade exige install_docker_ce=true."
+      when: install_observability_lab
+
   tasks:
     - name: Upgrade system packages  # noqa: package-latest
       ansible.builtin.dnf:
@@ -28,6 +35,41 @@
         state: present
         update_cache: true
       become: true
+
+    - name: Install systems-study tooling
+      ansible.builtin.dnf:
+        name: "{{ study_foundation_packages }}"
+        state: present
+      become: true
+      when: install_study_foundations
+
+    - name: Install PostgreSQL client tooling
+      ansible.builtin.dnf:
+        name: "{{ database_packages }}"
+        state: present
+      become: true
+      when: install_database_tooling
+
+    - name: Install platform engineering tooling
+      ansible.builtin.dnf:
+        name: "{{ platform_packages }}"
+        state: present
+      become: true
+      when: install_platform_tooling
+
+    - name: Install quality tooling
+      ansible.builtin.dnf:
+        name: "{{ quality_packages }}"
+        state: present
+      become: true
+      when: install_quality_tooling
+
+    - name: Install security tooling
+      ansible.builtin.dnf:
+        name: "{{ security_packages }}"
+        state: present
+      become: true
+      when: install_security_tooling
 
     - name: Download DBeaver CE RPM
       ansible.builtin.get_url:
@@ -51,34 +93,11 @@
         state: present
       become: true
 
-    - name: Check SRE package availability
-      ansible.builtin.command: "dnf repoquery --quiet --available {{ item }}"
-      loop: "{{ sre_packages }}"
-      loop_control:
-        label: "{{ item }}"
-      register: sre_package_query_results
-      changed_when: false
-      failed_when: false
-
-    - name: Build SRE package lists
-      ansible.builtin.set_fact:
-        available_sre_packages: "{{ (available_sre_packages | default([])) + ([item.item] if item.stdout | trim | length > 0 else []) }}"
-        unavailable_sre_packages: "{{ (unavailable_sre_packages | default([])) + ([item.item] if item.stdout | trim | length == 0 else []) }}"
-      loop: "{{ sre_package_query_results.results }}"
-      loop_control:
-        label: "{{ item.item }}"
-
-    - name: Show unavailable SRE packages
-      ansible.builtin.debug:
-        msg: "Pacotes SRE indisponiveis no dnf atual: {{ unavailable_sre_packages | join(', ') }}"
-      when: unavailable_sre_packages | default([]) | length > 0
-
-    - name: Install available SRE packages
+    - name: Install SRE packages
       ansible.builtin.dnf:
-        name: "{{ available_sre_packages }}"
+        name: "{{ sre_packages }}"
         state: present
       become: true
-      when: available_sre_packages | default([]) | length > 0
 
     - name: Check k9s binary
       ansible.builtin.stat:
@@ -119,7 +138,7 @@
       args:
         creates: "{{ dev_home }}/.local/bin/mise"
 
-    - name: Install global runtimes with mise
+    - name: Install runtimes with mise
       ansible.builtin.command: "{{ dev_home }}/.local/bin/mise use -g {{ item }}"
       environment:
         PATH: "{{ dev_home }}/.local/bin:{{ ansible_facts.env.PATH }}"
@@ -128,6 +147,39 @@
         label: "{{ item }}"
       register: mise_results
       changed_when: "'installed' in mise_results.stdout or 'updated' in mise_results.stdout or 'set' in mise_results.stdout"
+
+    - name: Install platform tools with mise
+      ansible.builtin.command: "{{ dev_home }}/.local/bin/mise use -g {{ item }}"
+      environment:
+        PATH: "{{ dev_home }}/.local/bin:{{ ansible_facts.env.PATH }}"
+      loop: "{{ platform_mise_tools }}"
+      loop_control:
+        label: "{{ item }}"
+      register: platform_mise_results
+      changed_when: "'installed' in platform_mise_results.stdout or 'updated' in platform_mise_results.stdout or 'set' in platform_mise_results.stdout"
+      when: install_platform_tooling
+
+    - name: Install quality tools with mise
+      ansible.builtin.command: "{{ dev_home }}/.local/bin/mise use -g {{ item }}"
+      environment:
+        PATH: "{{ dev_home }}/.local/bin:{{ ansible_facts.env.PATH }}"
+      loop: "{{ quality_mise_tools }}"
+      loop_control:
+        label: "{{ item }}"
+      register: quality_mise_results
+      changed_when: "'installed' in quality_mise_results.stdout or 'updated' in quality_mise_results.stdout or 'set' in quality_mise_results.stdout"
+      when: install_quality_tooling
+
+    - name: Install security tools with mise
+      ansible.builtin.command: "{{ dev_home }}/.local/bin/mise use -g {{ item }}"
+      environment:
+        PATH: "{{ dev_home }}/.local/bin:{{ ansible_facts.env.PATH }}"
+      loop: "{{ security_mise_tools }}"
+      loop_control:
+        label: "{{ item }}"
+      register: security_mise_results
+      changed_when: "'installed' in security_mise_results.stdout or 'updated' in security_mise_results.stdout or 'set' in security_mise_results.stdout"
+      when: install_security_tooling
 
     - name: Reshim mise tools
       ansible.builtin.command: "{{ dev_home }}/.local/bin/mise reshim"
@@ -240,6 +292,27 @@
         state: started
       become: true
       when: install_docker_ce
+
+    - name: Create observability lab directory
+      ansible.builtin.file:
+        path: "{{ observability_lab_dir }}"
+        state: directory
+        mode: "0755"
+      when: install_observability_lab
+
+    - name: Configure observability lab
+      ansible.builtin.copy:
+        src: labs/observability/
+        dest: "{{ observability_lab_dir }}/"
+        mode: preserve
+      when: install_observability_lab
+
+    - name: Validate observability lab configuration
+      ansible.builtin.command: docker compose config --quiet
+      args:
+        chdir: "{{ observability_lab_dir }}"
+      changed_when: false
+      when: install_observability_lab
 
     - name: Add developer user to docker group
       ansible.builtin.user:
@@ -491,6 +564,13 @@
         block: |2
               { import = "lazyvim.plugins.extras.lang.python" },
               { import = "lazyvim.plugins.extras.lang.dotnet" },
+              { import = "lazyvim.plugins.extras.lang.go" },
+              { import = "lazyvim.plugins.extras.lang.docker" },
+              { import = "lazyvim.plugins.extras.lang.json" },
+              { import = "lazyvim.plugins.extras.lang.markdown" },
+              { import = "lazyvim.plugins.extras.lang.sql" },
+              { import = "lazyvim.plugins.extras.lang.terraform" },
+              { import = "lazyvim.plugins.extras.lang.yaml" },
               { import = "lazyvim.plugins.extras.dap.core" },
               { import = "lazyvim.plugins.extras.test.core" },
         backup: true

@@ -13,7 +13,10 @@ O script Bash original continua em `setup-fedora-dev.sh` como referência, mas o
 - Instala `mise`.
 - Instala runtimes/SDKs e ferramentas globais pelo `mise` com versões fixadas: `.NET`, `Python`, `Node.js LTS`, `Go` e `lazygit`.
 - Instala `pipx` e ferramentas Python usando o Python gerenciado pelo `mise`: `uv`, `poetry`, `ruff`, `black`, `mypy`, `ipython`, `httpie`, `cookiecutter` e `pre-commit`.
-- Instala ferramentas SRE quando disponíveis: `ansible`, `kubectl`, `helm`, `terraform` e `k9s`.
+- Instala ferramentas SRE: `ansible`, `kubectl`, `helm`, OpenTofu e `k9s`.
+- Instala ferramentas de sistemas e diagnóstico: Clang, CMake, Ninja, GDB, Valgrind, `strace`, `lsof`, `perf`, `bpftrace`, `tcpdump`, TShark, `mtr` e utilitários de rede.
+- Instala cliente PostgreSQL, OpenTofu, Kustomize, `kind`, `k6`, `kubeconform`, `kubectx`, `stern`, linters de CI e ferramentas de segurança.
+- Cria um laboratório local de observabilidade com OpenTelemetry Collector, Prometheus, Loki, Tempo e Grafana, sem iniciá-lo automaticamente.
 - Instala `k9s` pelo release oficial do GitHub.
 - Instala Docker CE oficial e adiciona seu usuário ao grupo `docker`, se `install_docker_ce` estiver ativo.
 - Remove Podman, Buildah, Skopeo, `podman-docker`, `containers-common`, `containers-common-extra`, Toolbox e dependentes antes do Docker, se `install_docker_ce` e `replace_podman_with_docker` estiverem ativos. Pacotes ausentes são pulados. A substituição vem ativa por padrão.
@@ -33,6 +36,7 @@ O script Bash original continua em `setup-fedora-dev.sh` como referência, mas o
 - `bootstrap.sh`: instala `ansible-core` se necessário e executa o playbook.
 - `templates/kitty.conf.j2`: configuração do Kitty.
 - `templates/zshrc.j2`: configuração do Zsh.
+- `labs/observability/`: stack Docker Compose e comandos `just` para experiências de observabilidade locais.
 - `logs/`: diretório local para logs de execução, não versionados.
 
 ## Executar
@@ -46,6 +50,13 @@ Primeiro revise `group_vars/all.yml`, principalmente estas flags:
 - `configure_shell`: instala Oh My Zsh, plugins e altera shell padrão.
 - `install_lazyvim`: instala LazyVim em `~/.config/nvim`.
 - `install_dbeaver`: instala DBeaver CE via RPM oficial versionado.
+- `install_study_foundations`: instala ferramentas para exercícios de C, Linux, rede e diagnóstico.
+- `install_database_tooling`: instala o cliente PostgreSQL.
+- `install_platform_tooling`: instala ferramentas de Kubernetes, IaC e carga.
+- `install_quality_tooling`: instala linters para CI, OpenAPI e automação.
+- `install_security_tooling`: instala Gitleaks e Trivy.
+- `install_observability_lab`: provisiona o laboratório em `~/labs/observability`, mas não inicia os containers.
+- `configure_direnv`: habilita o hook do `direnv` no Zsh.
 
 Depois execute:
 
@@ -92,6 +103,17 @@ Os testes de regressão dessa etapa não alteram o sistema. Veja as dependência
 ```bash
 PYTHONDONTWRITEBYTECODE=1 /usr/bin/python3 -m unittest discover -s tests -v
 ```
+
+## Laboratório De Observabilidade
+
+Após executar o playbook, inicie o laboratório somente quando for realizar um exercício ou experimento:
+
+```bash
+cd ~/labs/observability
+just up
+```
+
+Grafana fica em `http://localhost:3000`, Prometheus em `http://localhost:9090`, e o OpenTelemetry Collector aceita OTLP em `localhost:4317` (gRPC) e `localhost:4318` (HTTP). Todos esses serviços são vinculados apenas a `127.0.0.1`.
 
 ## Depois De Executar
 

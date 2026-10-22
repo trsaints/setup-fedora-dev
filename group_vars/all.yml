@@ -13,6 +13,13 @@ configure_shell: true
 configure_kitty: true
 install_lazyvim: true
 install_dbeaver: true
+install_study_foundations: true
+install_database_tooling: true
+install_platform_tooling: true
+install_quality_tooling: true
+install_security_tooling: true
+install_observability_lab: true
+configure_direnv: true
 k9s_archive_url: "https://github.com/derailed/k9s/releases/latest/download/k9s_Linux_amd64.tar.gz"
 
 mise_tools:
@@ -22,7 +29,24 @@ mise_tools:
   - node@24.20.0
   - python@3.14.7
 
+platform_mise_tools:
+  - kind@0.33.0
+  - k6@2.3.0
+  - kubeconform@0.8.0
+  - kubectl@1.37.1
+  - kubectx@0.11.0
+  - stern@1.34.0
+
+quality_mise_tools:
+  - act@0.2.89
+  - actionlint@1.7.12
+  - vacuum@0.33.2
+
+security_mise_tools:
+  - syft@1.55.0
+
 python_cli_tools:
+  - ansible-lint
   - black
   - cookiecutter
   - httpie
@@ -76,11 +100,48 @@ base_packages:
   - zlib-devel
   - zsh
 
+study_foundation_packages:
+  - bind-utils
+  - bpftrace
+  - clang
+  - cmake
+  - direnv
+  - gdb
+  - iotop
+  - iproute
+  - just
+  - lsof
+  - mtr
+  - ninja-build
+  - nmap-ncat
+  - perf
+  - strace
+  - sysstat
+  - tcpdump
+  - valgrind
+  - wireshark-cli
+  - yq
+
+database_packages:
+  - postgresql
+  - postgresql-contrib
+
+platform_packages:
+  - kustomize
+  - opentofu
+
+quality_packages:
+  - grpcurl
+  - hadolint
+  - yamllint
+
+security_packages:
+  - gitleaks
+  - trivy
+
 sre_packages:
   - ansible
-  - kubernetes-client
   - helm
-  - terraform
 
 docker_packages:
   - docker-ce
@@ -111,6 +172,7 @@ icon_theme_package: candy-icon-theme
 icon_theme_name: "Candy"
 lazyvim_dir: "{{ dev_home }}/.config/nvim"
 lazyvim_starter_version: main
+observability_lab_dir: "{{ dev_home }}/labs/observability"
 zsh_custom_dir: "{{ dev_home }}/.oh-my-zsh/custom"
 oh_my_zsh_installer_url: https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh
 oh_my_zsh_installer_path: /tmp/oh-my-zsh-installer.sh

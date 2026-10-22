@@ -120,6 +120,11 @@ export PAGER=less
 export DOTNET_CLI_TELEMETRY_OPTOUT=1
 export PATH="$HOME/.local/bin:$HOME/.dotnet/tools:$PATH"
 eval "$(mise activate zsh)"
+{% if configure_direnv %}
+if command -v direnv >/dev/null 2>&1; then
+  eval "$(direnv hook zsh)"
+fi
+{% endif %}
 
 alias ls='eza --icons --group-directories-first'
 alias ll='eza -la --icons --group-directories-first --git'
@@ -131,7 +136,8 @@ alias py='python3'
 alias venv='python3 -m venv .venv && source .venv/bin/activate'
 alias dc='docker compose'
 alias k='kubectl'
-alias tf='terraform'
+alias tf='opentofu'
+alias tofu='opentofu'
 
 bindkey '^[[1;5C' forward-word
 bindkey '^[[1;5D' backward-word
