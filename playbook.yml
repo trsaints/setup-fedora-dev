@@ -322,7 +322,6 @@
         path: "{{ ai_memory_config_path }}"
         regexp: '^bind\s*='
         line: 'bind = "{{ ai_memory_bind }}"'
-      notify: Restart ai-memory service
       when: install_ai_memory
 
     - name: Configure ai-memory server URL
@@ -331,8 +330,15 @@
         regexp: '^server_url\s*='
         insertafter: '^bind\s*='
         line: 'server_url = "{{ ai_memory_server_url }}"'
-      notify: Restart ai-memory service
       when: install_ai_memory
+
+    - name: Restart ai-memory service before setup
+      ansible.builtin.systemd_service:
+        name: ai-memory.service
+        scope: user
+        state: restarted
+      when: install_ai_memory
+      changed_when: false
 
     - name: Set up ai-memory service and OpenCode integration
       ansible.builtin.command:
@@ -947,12 +953,6 @@
         - install_gradia
 
   handlers:
-    - name: Restart ai-memory service
-      ansible.builtin.systemd_service:
-        name: ai-memory.service
-        scope: user
-        state: restarted
-
     - name: Rebuild font cache
       ansible.builtin.command: "fc-cache -fv {{ dev_home }}/.local/share/fonts"
       changed_when: false
