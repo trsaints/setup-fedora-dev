@@ -20,6 +20,16 @@
         fail_msg: "O laboratorio de observabilidade exige install_docker_ce=true."
       when: install_observability_lab
 
+    - name: Validate Firefox Developer Edition architecture
+      ansible.builtin.assert:
+        that:
+          - ansible_facts.architecture == "x86_64"
+        fail_msg: >-
+          Firefox Developer Edition is currently pinned to Mozilla's x86_64 archive.
+          Disable install_firefox_developer_edition or configure an archive and checksum
+          for {{ ansible_facts.architecture }}.
+      when: install_firefox_developer_edition
+
   tasks:
     - name: Upgrade system packages  # noqa: package-latest
       ansible.builtin.dnf:
@@ -71,20 +81,53 @@
       become: true
       when: install_security_tooling
 
-    - name: Install Flatpak for Gradia
+    - name: Install GitHub CLI
+      ansible.builtin.dnf:
+        name: "{{ github_cli_packages }}"
+        state: present
+      become: true
+      when: install_github_cli
+
+    - name: Import Microsoft package signing key
+      ansible.builtin.rpm_key:
+        key: "{{ vscode_repo_key_url }}"
+        state: present
+      become: true
+      when: install_vscode
+
+    - name: Configure Visual Studio Code repository
+      ansible.builtin.yum_repository:
+        name: vscode
+        description: Visual Studio Code
+        baseurl: "{{ vscode_repo_url }}"
+        enabled: true
+        gpgcheck: true
+        gpgkey: "{{ vscode_repo_key_url }}"
+      become: true
+      when: install_vscode
+
+    - name: Install Visual Studio Code
+      ansible.builtin.dnf:
+        name: code
+        state: present
+        update_cache: true
+      become: true
+      when: install_vscode
+
+    - name: Install Flatpak for desktop applications
       ansible.builtin.dnf:
         name: flatpak
         state: present
       become: true
-      when: install_gradia
+      when: install_gradia or install_bruno
 
-    - name: Add Flathub remote for Gradia
+    - name: Add Flathub remote for desktop applications
       community.general.flatpak_remote:
         name: flathub
         state: present
         flatpakrepo_url: "{{ gradia_flathub_repo }}"
         method: user
-      when: install_gradia
+      when: install_gradia or install_bruno
 
     - name: Install Gradia from Flathub
       community.general.flatpak:
@@ -93,6 +136,14 @@
         method: user
         remote: flathub
       when: install_gradia
+
+    - name: Install Bruno from Flathub
+      community.general.flatpak:
+        name: "{{ bruno_flatpak_id }}"
+        state: present
+        method: user
+        remote: flathub
+      when: install_bruno
 
     - name: Download DBeaver CE RPM
       ansible.builtin.get_url:
@@ -169,6 +220,69 @@
           MimeType=x-scheme-handler/obsidian;
           StartupWMClass=obsidian
       when: install_obsidian
+
+    - name: Create Firefox Developer Edition directory
+      ansible.builtin.file:
+        path: "{{ firefox_developer_edition_dir }}"
+        state: directory
+        mode: "0755"
+      when: install_firefox_developer_edition
+
+    - name: Download Firefox Developer Edition
+      ansible.builtin.get_url:
+        url: "{{ firefox_developer_edition_url }}"
+        dest: "{{ firefox_developer_edition_archive }}"
+        mode: "0644"
+        checksum: "sha256:{{ firefox_developer_edition_sha256 }}"
+      when: install_firefox_developer_edition
+
+    - name: Install Firefox Developer Edition
+      ansible.builtin.unarchive:
+        src: "{{ firefox_developer_edition_archive }}"
+        dest: "{{ firefox_developer_edition_dir }}"
+        remote_src: true
+        creates: "{{ firefox_developer_edition_version_marker }}"
+      when: install_firefox_developer_edition
+
+    - name: Record Firefox Developer Edition version
+      ansible.builtin.file:
+        path: "{{ firefox_developer_edition_version_marker }}"
+        state: touch
+        mode: "0644"
+        modification_time: preserve
+        access_time: preserve
+      when: install_firefox_developer_edition
+
+    - name: Create Firefox Developer Edition command
+      ansible.builtin.file:
+        src: "{{ firefox_developer_edition_binary }}"
+        dest: "{{ firefox_developer_edition_command }}"
+        state: link
+      when: install_firefox_developer_edition
+
+    - name: Create Firefox Developer Edition desktop entry directory
+      ansible.builtin.file:
+        path: "{{ firefox_developer_edition_desktop | dirname }}"
+        state: directory
+        mode: "0755"
+      when: install_firefox_developer_edition
+
+    - name: Create Firefox Developer Edition desktop entry
+      ansible.builtin.copy:
+        dest: "{{ firefox_developer_edition_desktop }}"
+        mode: "0644"
+        content: |
+          [Desktop Entry]
+          Name=Firefox Developer Edition
+          Comment=Browse the web with developer tools
+          Exec={{ firefox_developer_edition_command }} %u
+          Icon={{ firefox_developer_edition_dir }}/firefox/browser/chrome/icons/default/default128.png
+          Terminal=false
+          Type=Application
+          Categories=Network;WebBrowser;Development;
+          MimeType=text/html;text/xml;application/xhtml+xml;x-scheme-handler/http;x-scheme-handler/https;
+          StartupWMClass=firefox-aurora
+      when: install_firefox_developer_edition
 
     - name: Download ai-memory installer
       ansible.builtin.get_url:

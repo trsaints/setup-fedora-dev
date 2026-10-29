@@ -8,6 +8,9 @@
 - Docker CE, cliente PostgreSQL, pgModeler, DBeaver CE e `k9s`.
 - Obsidian via AppImage oficial em `~/Applications`, com o comando `obsidian` e atalho no menu de aplicações.
 - Gradia via Flathub, para edição e captura de tela.
+- Visual Studio Code pelo repositório oficial da Microsoft e GitHub CLI (`gh`) pelo Fedora.
+- Firefox Developer Edition pelo arquivo oficial da Mozilla em `~/Applications`, com o comando `firefox-developer-edition`.
+- Bruno via Flathub para chamadas e coleções de APIs locais e versionáveis com Git.
 - ai-memory como serviço do usuário, integrado ao OpenCode em `http://127.0.0.1:25559`.
 - Oh My Zsh, tema Dracula, Kitty, JetBrains Mono Nerd Font, tema Dracula GTK e ícones Candy.
 - LazyVim com extras para Python, .NET/C#, Go, Docker, JSON, Markdown, SQL, Terraform, YAML, debug e testes.
@@ -29,6 +32,10 @@ Todas ficam em [`../group_vars/all.yml`](../group_vars/all.yml).
 | `install_dbeaver` | Instala DBeaver CE via RPM oficial fixado. |
 | `install_obsidian` | Instala Obsidian via AppImage em `~/Applications`. |
 | `install_gradia` | Instala Gradia via Flathub para o usuário atual. |
+| `install_vscode` | Instala Visual Studio Code pelo repositório oficial da Microsoft. |
+| `install_firefox_developer_edition` | Instala Firefox Developer Edition em `~/Applications`. |
+| `install_bruno` | Instala Bruno via Flathub para o usuário atual. |
+| `install_github_cli` | Instala GitHub CLI (`gh`) pelos repositórios do Fedora. |
 | `install_ai_memory` | Instala ai-memory para o usuário atual. |
 | `install_study_foundations` | Instala ferramentas para exercícios de C, Linux, rede e diagnóstico. |
 | `install_database_tooling` | Instala o cliente PostgreSQL. |
@@ -59,6 +66,12 @@ O playbook fixa a versão oficial definida em `dbeaver_version`. Caso tenha outr
 ### Gradia
 
 `<Super><Shift>S` abre uma captura de tela interativa com o Gradia.
+
+### VS Code, GitHub CLI, Firefox Developer Edition e Bruno
+
+- Use `code` para abrir o VS Code e `gh auth login` para autenticar o GitHub CLI.
+- O Firefox Developer Edition é iniciado pelo menu de aplicações ou com `firefox-developer-edition`. O arquivo oficial atualmente fixado pelo playbook é para `x86_64`.
+- Bruno é iniciado pelo menu de aplicações ou com `flatpak run com.usebruno.Bruno`. Salve coleções em um repositório Git para compartilhar e versionar as chamadas de API.
 
 ### Laboratório de Observabilidade
 

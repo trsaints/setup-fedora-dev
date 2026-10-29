@@ -15,6 +15,10 @@ install_lazyvim: true
 install_dbeaver: true
 install_obsidian: true
 install_gradia: true
+install_vscode: true
+install_firefox_developer_edition: true
+install_bruno: true
+install_github_cli: true
 install_ai_memory: true
 install_study_foundations: true
 install_database_tooling: true
@@ -142,6 +146,9 @@ security_packages:
   - gitleaks
   - trivy
 
+github_cli_packages:
+  - gh
+
 sre_packages:
   - ansible
   - helm
@@ -193,6 +200,18 @@ obsidian_command_path: "{{ dev_home }}/.local/bin/obsidian"
 obsidian_desktop_path: "{{ dev_home }}/.local/share/applications/obsidian.desktop"
 gradia_flatpak_id: be.alexandervanhee.gradia
 gradia_flathub_repo: https://dl.flathub.org/repo/flathub.flatpakrepo
+bruno_flatpak_id: com.usebruno.Bruno
+vscode_repo_url: https://packages.microsoft.com/yumrepos/vscode
+vscode_repo_key_url: https://packages.microsoft.com/keys/microsoft.asc
+firefox_developer_edition_version: "160.0b2"
+firefox_developer_edition_url: "https://archive.mozilla.org/pub/devedition/releases/{{ firefox_developer_edition_version }}/linux-x86_64/en-US/firefox-{{ firefox_developer_edition_version }}.tar.xz"
+firefox_developer_edition_sha256: 108a33b79bacf67996df2b0c6418d3cd9a5d0bcbe4f757939582ee70c1575835
+firefox_developer_edition_archive: "/tmp/firefox-developer-edition-{{ firefox_developer_edition_version }}.tar.xz"
+firefox_developer_edition_dir: "{{ dev_home }}/Applications/firefox-developer-edition"
+firefox_developer_edition_binary: "{{ firefox_developer_edition_dir }}/firefox/firefox"
+firefox_developer_edition_version_marker: "{{ firefox_developer_edition_dir }}/.installed-{{ firefox_developer_edition_version }}"
+firefox_developer_edition_command: "{{ dev_home }}/.local/bin/firefox-developer-edition"
+firefox_developer_edition_desktop: "{{ dev_home }}/.local/share/applications/firefox-developer-edition.desktop"
 ai_memory_version: "3.2.9"
 ai_memory_installer_url: "https://github.com/akitaonrails/ai-memory/releases/download/v{{ ai_memory_version }}/install.sh"
 ai_memory_installer_path: "/tmp/ai-memory-install-{{ ai_memory_version }}.sh"
