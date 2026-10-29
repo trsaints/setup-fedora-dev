@@ -12,6 +12,7 @@
 - Firefox Developer Edition pelo arquivo oficial da Mozilla em `~/Applications`, com o comando `firefox-developer-edition`.
 - Bruno via Flathub para chamadas e coleções de APIs locais e versionáveis com Git.
 - ai-memory como serviço do usuário, integrado ao OpenCode em `http://127.0.0.1:25559`.
+- Servidor MCP do GitHub registrado no OpenCode, autenticado por `GITHUB_MCP_PAT` sem gravar o token na configuração.
 - Oh My Zsh, tema Dracula, Kitty, JetBrains Mono Nerd Font, tema Dracula GTK e ícones Candy.
 - LazyVim com extras para Python, .NET/C#, Go, Docker, JSON, Markdown, SQL, Terraform, YAML, debug e testes.
 - Laboratório local de observabilidade com OpenTelemetry Collector, Prometheus, Loki, Tempo e Grafana.
@@ -37,6 +38,7 @@ Todas ficam em [`../group_vars/all.yml`](../group_vars/all.yml).
 | `install_bruno` | Instala Bruno via Flathub para o usuário atual. |
 | `install_github_cli` | Instala GitHub CLI (`gh`) pelos repositórios do Fedora. |
 | `install_ai_memory` | Instala ai-memory para o usuário atual. |
+| `configure_github_mcp` | Registra o servidor MCP do GitHub no OpenCode usando `GITHUB_MCP_PAT`. |
 | `install_study_foundations` | Instala ferramentas para exercícios de C, Linux, rede e diagnóstico. |
 | `install_database_tooling` | Instala o cliente PostgreSQL. |
 | `install_platform_tooling` | Instala ferramentas de Kubernetes, IaC e carga. |
@@ -56,6 +58,49 @@ cat ~/.local/share/ai-memory/auth-tokens/default
 ```
 
 Reinicie o OpenCode depois da instalação para que ele carregue o plugin atualizado.
+
+### GitHub MCP no OpenCode
+
+O playbook grava `~/.config/opencode/opencode.json` com o servidor `github` em `mcp.servers` (formato do OpenCode V2), usando `oauth: false` e o cabeçalho `Authorization: Bearer {env:GITHUB_MCP_PAT}`. O token nunca é escrito nesse arquivo; ele é resolvido pelo OpenCode a partir do ambiente. O arquivo gerenciado é JSON estrito, sem comentários; use `~/.config/opencode/opencode.jsonc` para preferências locais, como o shell padrão.
+
+Para injetar o PAT, exporte `GITHUB_MCP_PAT` antes de executar o playbook:
+
+```bash
+export GITHUB_MCP_PAT=ghp_seu_token
+./bootstrap.sh
+```
+
+Com a variável definida, o playbook grava `~/.config/opencode/github-mcp.env` com modo `0600`, e o `~/.zshrc` gerado passa a carregar esse arquivo em cada shell novo. Se preferir configurar manualmente (ou depois da instalação):
+
+```bash
+cat > ~/.config/opencode/github-mcp.env <<'EOF'
+export GITHUB_MCP_PAT=ghp_seu_token
+EOF
+chmod 600 ~/.config/opencode/github-mcp.env
+```
+
+Abra um shell novo e valide:
+
+```bash
+opencode mcp list
+```
+
+O servidor `github` deve aparecer conectado. Se o serviço do OpenCode já estiver em execução, rode `opencode service restart` para que ele herde a variável; sem o PAT o servidor permanece configurado, mas sem autenticar.
+
+Para reaplicar apenas esta configuração depois de mudar o token:
+
+```bash
+./bootstrap.sh --tags github_mcp
+```
+
+Se você já exportava o token com outro nome (por exemplo, `GITHUB_OPENCODE_PAT`), basta criar o arquivo com o novo nome:
+
+```bash
+printf 'export GITHUB_MCP_PAT=%q\n' "$GITHUB_OPENCODE_PAT" > ~/.config/opencode/github-mcp.env
+chmod 600 ~/.config/opencode/github-mcp.env
+```
+
+> Não versione `github-mcp.env` nem exporte o token em arquivos do repositório. Use um token de granularidade fina (ou clássico) apenas com os escopos necessários para os repositórios que o agente deve acessar.
 
 ## Aplicativos e Serviços
 

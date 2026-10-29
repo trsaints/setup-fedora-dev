@@ -119,6 +119,13 @@ export VISUAL=nvim
 export PAGER=less
 export DOTNET_CLI_TELEMETRY_OPTOUT=1
 export PATH="$HOME/.local/bin:$HOME/.dotnet/tools:$PATH"
+{% if configure_github_mcp %}
+# PAT do GitHub MCP para o OpenCode. O valor fica fora deste arquivo,
+# em ~/.config/opencode/github-mcp.env (gerado pelo playbook, modo 0600).
+if [[ -r "$HOME/.config/opencode/github-mcp.env" ]]; then
+  source "$HOME/.config/opencode/github-mcp.env"
+fi
+{% endif %}
 eval "$(mise activate zsh)"
 {% if configure_direnv %}
 if command -v direnv >/dev/null 2>&1; then

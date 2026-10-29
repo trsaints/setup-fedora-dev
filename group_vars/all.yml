@@ -221,3 +221,15 @@ ai_memory_data_dir: "{{ dev_home }}/.local/share/ai-memory"
 ai_memory_config_path: "{{ ai_memory_data_dir }}/config.toml"
 ai_memory_bind: "127.0.0.1:25559"
 ai_memory_server_url: "http://{{ ai_memory_bind }}"
+
+# GitHub MCP no OpenCode. O PAT nunca e gravado no opencode.json: a configuracao
+# referencia {env:GITHUB_MCP_PAT} e o valor e injetado no shell.
+configure_github_mcp: true
+opencode_config_dir: "{{ dev_home }}/.config/opencode"
+opencode_config_path: "{{ opencode_config_dir }}/opencode.json"
+opencode_schema_url: "https://opencode.ai/config.json"
+github_mcp_server_name: github
+github_mcp_url: "https://api.githubcopilot.com/mcp/"
+github_mcp_pat_env_var: GITHUB_MCP_PAT
+github_mcp_pat_file: "{{ opencode_config_dir }}/github-mcp.env"
+github_mcp_pat: "{{ lookup('env', github_mcp_pat_env_var) }}"

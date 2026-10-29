@@ -30,6 +30,13 @@ chmod +x bootstrap.sh
 ./bootstrap.sh
 ```
 
+Opcionalmente, injete o PAT do GitHub MCP para que o playbook o grave em `~/.config/opencode/github-mcp.env` (o token não vai para o `opencode.json`):
+
+```bash
+export GITHUB_MCP_PAT=ghp_seu_token
+./bootstrap.sh
+```
+
 O script solicita e valida a senha `sudo`, instala `ansible-core` quando necessário, instala as collections definidas em `requirements.yml` e salva o stdout em `logs/ansible-YYYYMMDD-HHMMSS.log`. O Ansible também escreve em `logs/ansible.log`.
 
 Se o Ansible já estiver disponível:

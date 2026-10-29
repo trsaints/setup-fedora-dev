@@ -389,6 +389,93 @@
       changed_when: false
       when: install_ai_memory
 
+    - name: Ensure OpenCode configuration directory exists
+      ansible.builtin.file:
+        path: "{{ opencode_config_dir }}"
+        state: directory
+        mode: "0700"
+      when: configure_github_mcp
+      tags: [github_mcp]
+
+    - name: Check OpenCode configuration file
+      ansible.builtin.stat:
+        path: "{{ opencode_config_path }}"
+      register: opencode_config_file
+      when: configure_github_mcp
+      tags: [github_mcp]
+
+    - name: Read OpenCode configuration file
+      ansible.builtin.slurp:
+        src: "{{ opencode_config_path }}"
+      register: opencode_config_slurp
+      when:
+        - configure_github_mcp
+        - opencode_config_file.stat.exists
+      tags: [github_mcp]
+
+    - name: Load OpenCode configuration
+      ansible.builtin.set_fact:
+        opencode_config: >-
+          {{ (opencode_config_slurp.content | b64decode | from_json)
+             if opencode_config_file.stat.exists
+             else {} }}
+      when: configure_github_mcp
+      tags: [github_mcp]
+
+    - name: Remove legacy V1 GitHub MCP entry from OpenCode configuration
+      ansible.builtin.set_fact:
+        opencode_config: >-
+          {{ opencode_config
+             | combine({'mcp': (opencode_config.mcp | default({}))
+                                  | dict2items
+                                  | rejectattr('key', 'equalto', github_mcp_server_name)
+                                  | items2dict}) }}
+      when:
+        - configure_github_mcp
+        - github_mcp_server_name in (opencode_config.mcp | default({}))
+      tags: [github_mcp]
+
+    - name: Configure GitHub MCP server in OpenCode
+      ansible.builtin.copy:
+        content: |
+          {{ opencode_config
+             | combine({'$schema': opencode_schema_url})
+             | combine({'mcp': {'servers': {github_mcp_server_name: {
+                 'type': 'remote',
+                 'url': github_mcp_url,
+                 'oauth': false,
+                 'headers': {'Authorization': 'Bearer {env:' ~ github_mcp_pat_env_var ~ '}'}
+               }}}}, recursive=true)
+             | to_nice_json(indent=2) }}
+        dest: "{{ opencode_config_path }}"
+        mode: "0600"
+      when: configure_github_mcp
+      tags: [github_mcp]
+
+    - name: Write GitHub MCP PAT environment file
+      ansible.builtin.copy:
+        content: "export {{ github_mcp_pat_env_var }}={{ github_mcp_pat | quote }}\n"
+        dest: "{{ github_mcp_pat_file }}"
+        mode: "0600"
+      when:
+        - configure_github_mcp
+        - github_mcp_pat | length > 0
+      no_log: true
+      tags: [github_mcp]
+
+    - name: Warn when the GitHub MCP PAT is not available
+      ansible.builtin.debug:
+        msg:
+          - "{{ github_mcp_pat_env_var }} nao foi definido nesta execucao."
+          - "O servidor MCP '{{ github_mcp_server_name }}' ficara configurado, mas sem autenticar ate o PAT existir."
+          - >-
+            Exporte {{ github_mcp_pat_env_var }} no shell antes de iniciar o OpenCode,
+            por exemplo em ~/.config/opencode/github-mcp.env (o ~/.zshrc carrega esse arquivo).
+      when:
+        - configure_github_mcp
+        - github_mcp_pat | length == 0
+      tags: [github_mcp]
+
     - name: Install pgModeler
       ansible.builtin.dnf:
         name: "{{ pgmodeler_package }}"
