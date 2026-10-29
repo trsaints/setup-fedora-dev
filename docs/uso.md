@@ -12,6 +12,7 @@
 - Firefox Developer Edition pelo arquivo oficial da Mozilla em `~/Applications`, com o comando `firefox-developer-edition`.
 - Bruno via Flathub para chamadas e coleções de APIs locais e versionáveis com Git.
 - ai-memory como serviço do usuário, integrado ao OpenCode em `http://127.0.0.1:25559`.
+- OpenCode CLI instalado pelo instalador oficial da V2, compartilhando a configuração com o OpenCode Desktop em `~/.config/opencode`.
 - Servidor MCP do GitHub registrado no OpenCode, autenticado por `GITHUB_MCP_PAT` sem gravar o token na configuração.
 - Oh My Zsh, tema Dracula, Kitty, JetBrains Mono Nerd Font, tema Dracula GTK e ícones Candy.
 - LazyVim com extras para Python, .NET/C#, Go, Docker, JSON, Markdown, SQL, Terraform, YAML, debug e testes.
@@ -37,6 +38,7 @@ Todas ficam em [`../group_vars/all.yml`](../group_vars/all.yml).
 | `install_firefox_developer_edition` | Instala Firefox Developer Edition em `~/Applications`. |
 | `install_bruno` | Instala Bruno via Flathub para o usuário atual. |
 | `install_github_cli` | Instala GitHub CLI (`gh`) pelos repositórios do Fedora. |
+| `install_opencode_cli` | Instala o OpenCode CLI (fixado em `opencode_cli_version`) em `~/.opencode/bin`. |
 | `install_ai_memory` | Instala ai-memory para o usuário atual. |
 | `configure_github_mcp` | Registra o servidor MCP do GitHub no OpenCode usando `GITHUB_MCP_PAT`. |
 | `install_study_foundations` | Instala ferramentas para exercícios de C, Linux, rede e diagnóstico. |
@@ -46,6 +48,19 @@ Todas ficam em [`../group_vars/all.yml`](../group_vars/all.yml).
 | `install_security_tooling` | Instala Gitleaks e Trivy. |
 | `install_observability_lab` | Provisiona o laboratório em `~/labs/observability`, sem iniciá-lo. |
 | `configure_direnv` | Habilita o hook do `direnv` no Zsh. |
+
+### OpenCode CLI e Desktop
+
+O playbook instala o OpenCode CLI com o instalador oficial da V2, sem alterar o `~/.zshrc` (o PATH é gerenciado pelo template) e fixando a versão em `opencode_cli_version`:
+
+```bash
+~/.opencode/bin/opencode --version
+opencode --version
+```
+
+O CLI é obrigatório para o ai-memory: o `setup`, o `install-hooks` e o `install-mcp` executam `opencode --version` para decidir entre o contrato V1 e V2 de plugin, hooks e MCP. Sem o CLI no `PATH`, a detecção falha e a integração é gerada no formato errado.
+
+O OpenCode CLI e o OpenCode Desktop compartilham `~/.config/opencode`, então agentes, plugins, MCPs e o serviço em segundo plano são os mesmos nas duas interfaces; não é necessário configurar duas vezes.
 
 ### ai-memory
 
@@ -167,6 +182,7 @@ mise current
 uv --version
 poetry --version
 nvim
+opencode --version
 kitty
 ```
 

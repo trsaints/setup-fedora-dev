@@ -284,6 +284,66 @@
           StartupWMClass=firefox-aurora
       when: install_firefox_developer_edition
 
+    - name: Check OpenCode CLI binary
+      ansible.builtin.stat:
+        path: "{{ opencode_cli_bin }}"
+      register: opencode_cli_binary
+      when: install_opencode_cli
+      tags: [opencode_cli]
+
+    - name: Read installed OpenCode CLI version
+      ansible.builtin.command:
+        argv:
+          - "{{ opencode_cli_bin }}"
+          - --version
+      register: opencode_cli_installed
+      changed_when: false
+      failed_when: false
+      when:
+        - install_opencode_cli
+        - opencode_cli_binary.stat.exists
+      tags: [opencode_cli]
+
+    - name: Normalise the installed OpenCode CLI version
+      ansible.builtin.set_fact:
+        opencode_cli_installed_version: >-
+          {{ (((opencode_cli_installed | default({})).stdout | default('v0')).split() | last)
+             | regex_replace('^v', '') }}
+      when: install_opencode_cli
+      tags: [opencode_cli]
+
+    - name: Determine whether the OpenCode CLI needs installation
+      ansible.builtin.set_fact:
+        opencode_cli_needs_install: >-
+          {{ (not opencode_cli_binary.stat.exists)
+             or (opencode_cli_installed_version != opencode_cli_version) }}
+      when: install_opencode_cli
+      tags: [opencode_cli]
+
+    - name: Download OpenCode CLI installer
+      ansible.builtin.get_url:
+        url: "{{ opencode_cli_installer_url }}"
+        dest: "{{ opencode_cli_installer_path }}"
+        mode: "0755"
+      when:
+        - install_opencode_cli
+        - opencode_cli_needs_install
+      tags: [opencode_cli]
+
+    - name: Install OpenCode CLI
+      ansible.builtin.command:
+        argv:
+          - bash
+          - "{{ opencode_cli_installer_path }}"
+          - --version
+          - "{{ opencode_cli_version }}"
+          - --no-modify-path
+      changed_when: true
+      when:
+        - install_opencode_cli
+        - opencode_cli_needs_install
+      tags: [opencode_cli]
+
     - name: Download ai-memory installer
       ansible.builtin.get_url:
         url: "{{ ai_memory_installer_url }}"
@@ -352,6 +412,8 @@
           - --yes
           - --agent
           - open-code
+      environment:
+        PATH: "{{ opencode_cli_bin_dir }}:{{ ansible_facts.env.PATH }}"
       changed_when: false
       when: install_ai_memory
 
@@ -369,6 +431,8 @@
           - --server-url
           - "{{ ai_memory_server_url }}"
           - --apply
+      environment:
+        PATH: "{{ opencode_cli_bin_dir }}:{{ ansible_facts.env.PATH }}"
       changed_when: false
       when: install_ai_memory
 
@@ -386,6 +450,8 @@
           - --server-url
           - "{{ ai_memory_server_url }}"
           - --apply
+      environment:
+        PATH: "{{ opencode_cli_bin_dir }}:{{ ansible_facts.env.PATH }}"
       changed_when: false
       when: install_ai_memory
 
@@ -1049,4 +1115,4 @@
       ansible.builtin.debug:
         msg:
           - "Reinicie a sessao para aplicar shell, grupo docker, fonte e tema."
-          - "Valide com: docker run hello-world; dotnet --info; python --version; uv --version; poetry --version; nvim"
+          - "Valide com: docker run hello-world; dotnet --info; python --version; uv --version; poetry --version; nvim; opencode --version"

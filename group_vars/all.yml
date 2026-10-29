@@ -212,6 +212,16 @@ firefox_developer_edition_binary: "{{ firefox_developer_edition_dir }}/firefox/f
 firefox_developer_edition_version_marker: "{{ firefox_developer_edition_dir }}/.installed-{{ firefox_developer_edition_version }}"
 firefox_developer_edition_command: "{{ dev_home }}/.local/bin/firefox-developer-edition"
 firefox_developer_edition_desktop: "{{ dev_home }}/.local/share/applications/firefox-developer-edition.desktop"
+# OpenCode CLI: necessario para o ai-memory detectar a versao (V1/V2) e gerar
+# o plugin/hooks no formato correto. O CLI e o Desktop compartilham a mesma
+# configuracao em ~/.config/opencode.
+install_opencode_cli: true
+opencode_cli_version: "2.2.1"
+opencode_cli_installer_url: "https://opencode.ai/v2/install"
+opencode_cli_installer_path: "/tmp/opencode-cli-install-{{ opencode_cli_version }}.sh"
+opencode_cli_bin_dir: "{{ dev_home }}/.opencode/bin"
+opencode_cli_bin: "{{ opencode_cli_bin_dir }}/opencode"
+
 ai_memory_version: "3.2.9"
 ai_memory_installer_url: "https://github.com/akitaonrails/ai-memory/releases/download/v{{ ai_memory_version }}/install.sh"
 ai_memory_installer_path: "/tmp/ai-memory-install-{{ ai_memory_version }}.sh"

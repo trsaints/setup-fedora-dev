@@ -39,6 +39,8 @@ export GITHUB_MCP_PAT=ghp_seu_token
 
 O script solicita e valida a senha `sudo`, instala `ansible-core` quando necessário, instala as collections definidas em `requirements.yml` e salva o stdout em `logs/ansible-YYYYMMDD-HHMMSS.log`. O Ansible também escreve em `logs/ansible.log`.
 
+O playbook instala o OpenCode CLI (versão fixada em `opencode_cli_version`) antes de configurar o ai-memory, porque `ai-memory setup`, `install-hooks` e `install-mcp` consultam `opencode --version` para escolher o formato V1 ou V2 da integração. O binário fica em `~/.opencode/bin`, que é adicionado ao `PATH` pelo `~/.zshrc` gerenciado.
+
 Se o Ansible já estiver disponível:
 
 ```bash
