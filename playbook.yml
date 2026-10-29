@@ -103,11 +103,19 @@
       when: install_dbeaver
 
     - name: Install DBeaver CE
-      ansible.builtin.dnf:
-        name: "{{ dbeaver_rpm_path }}"
-        state: present
-        disable_gpg_check: true
+      # On Fedora 44, the Ansible dnf5 module can report failure after a
+      # successful local-RPM transaction when its post-transaction D-Bus query
+      # is denied by polkit. Calling DNF directly preserves its real exit code.
+      ansible.builtin.command:
+        argv:
+          - dnf
+          - install
+          - --assumeyes
+          - --nogpgcheck
+          - "{{ dbeaver_rpm_path }}"
       become: true
+      register: dbeaver_install
+      changed_when: "'Nothing to do.' not in dbeaver_install.stdout"
       when: install_dbeaver
 
     - name: Create Obsidian application directory
