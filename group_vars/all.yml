@@ -13,6 +13,8 @@ configure_shell: true
 configure_kitty: true
 install_lazyvim: true
 install_dbeaver: true
+install_obsidian: true
+install_gradia: true
 install_study_foundations: true
 install_database_tooling: true
 install_platform_tooling: true
@@ -181,3 +183,12 @@ dbeaver_version: "26.2.0"
 dbeaver_rpm_url: "https://github.com/dbeaver/dbeaver/releases/download/{{ dbeaver_version }}/dbeaver-ce-{{ dbeaver_version }}-linux-x86_64.rpm"
 dbeaver_rpm_path: "/tmp/dbeaver-ce-{{ dbeaver_version }}-linux-x86_64.rpm"
 dbeaver_rpm_sha256: acb3bc2fc2c3547df154f2bec20b5dc6b7941bd420ccb778de94e43e7170947e
+obsidian_version: "1.14.5"
+obsidian_appimage_url: "https://github.com/obsidianmd/obsidian-releases/releases/download/v{{ obsidian_version }}/Obsidian-{{ obsidian_version }}.AppImage"
+obsidian_appimage_sha256: 306815f60d15dea8610d72886ef5e50ef4b7e7185e952ffc3bb21bee1582d952
+obsidian_appimage_dir: "{{ dev_home }}/Applications"
+obsidian_appimage_path: "{{ obsidian_appimage_dir }}/Obsidian-{{ obsidian_version }}.AppImage"
+obsidian_command_path: "{{ dev_home }}/.local/bin/obsidian"
+obsidian_desktop_path: "{{ dev_home }}/.local/share/applications/obsidian.desktop"
+gradia_flatpak_id: be.alexandervanhee.gradia
+gradia_flathub_repo: https://dl.flathub.org/repo/flathub.flatpakrepo

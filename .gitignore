@@ -50,4 +50,5 @@ logs/*.log
 Thumbs.db
 
 # Ansible local artifacts
+.ansible/
 *.retry

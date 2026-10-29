@@ -71,6 +71,29 @@
       become: true
       when: install_security_tooling
 
+    - name: Install Flatpak for Gradia
+      ansible.builtin.dnf:
+        name: flatpak
+        state: present
+      become: true
+      when: install_gradia
+
+    - name: Add Flathub remote for Gradia
+      community.general.flatpak_remote:
+        name: flathub
+        state: present
+        flatpakrepo_url: "{{ gradia_flathub_repo }}"
+        method: user
+      when: install_gradia
+
+    - name: Install Gradia from Flathub
+      community.general.flatpak:
+        name: "{{ gradia_flatpak_id }}"
+        state: present
+        method: user
+        remote: flathub
+      when: install_gradia
+
     - name: Download DBeaver CE RPM
       ansible.builtin.get_url:
         url: "{{ dbeaver_rpm_url }}"
@@ -86,6 +109,58 @@
         disable_gpg_check: true
       become: true
       when: install_dbeaver
+
+    - name: Create Obsidian application directory
+      ansible.builtin.file:
+        path: "{{ obsidian_appimage_dir }}"
+        state: directory
+        mode: "0755"
+      when: install_obsidian
+
+    - name: Download Obsidian AppImage
+      ansible.builtin.get_url:
+        url: "{{ obsidian_appimage_url }}"
+        dest: "{{ obsidian_appimage_path }}"
+        mode: "0755"
+        checksum: "sha256:{{ obsidian_appimage_sha256 }}"
+      when: install_obsidian
+
+    - name: Create local binary directory
+      ansible.builtin.file:
+        path: "{{ obsidian_command_path | dirname }}"
+        state: directory
+        mode: "0755"
+      when: install_obsidian
+
+    - name: Create Obsidian command
+      ansible.builtin.file:
+        src: "{{ obsidian_appimage_path }}"
+        dest: "{{ obsidian_command_path }}"
+        state: link
+      when: install_obsidian
+
+    - name: Create Obsidian desktop entry directory
+      ansible.builtin.file:
+        path: "{{ obsidian_desktop_path | dirname }}"
+        state: directory
+        mode: "0755"
+      when: install_obsidian
+
+    - name: Create Obsidian desktop entry
+      ansible.builtin.copy:
+        dest: "{{ obsidian_desktop_path }}"
+        mode: "0644"
+        content: |
+          [Desktop Entry]
+          Name=Obsidian
+          Comment=Knowledge base that works on local Markdown files
+          Exec={{ obsidian_command_path }} %U
+          Terminal=false
+          Type=Application
+          Categories=Office;Utility;
+          MimeType=x-scheme-handler/obsidian;
+          StartupWMClass=obsidian
+      when: install_obsidian
 
     - name: Install pgModeler
       ansible.builtin.dnf:
@@ -625,6 +700,30 @@
         label: "{{ item.key }}"
       failed_when: false
       when: configure_gnome
+
+    - name: Configure Gradia interactive screenshot shortcut
+      community.general.dconf:
+        key: "{{ item.key }}"
+        value: "{{ item.value }}"
+        state: present
+      loop:
+        - key: /org/gnome/settings-daemon/plugins/media-keys/custom-keybindings
+          value: >-
+            ['/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom0/',
+            '/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom1/',
+            '/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom2/']
+        - key: /org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom2/name
+          value: "'Gradia interactive screenshot'"
+        - key: /org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom2/command
+          value: "'flatpak run {{ gradia_flatpak_id }} --screenshot=INTERACTIVE'"
+        - key: /org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom2/binding
+          value: "'<Super><Shift>s'"
+      loop_control:
+        label: "{{ item.key }}"
+      failed_when: false
+      when:
+        - configure_gnome
+        - install_gradia
 
   handlers:
     - name: Rebuild font cache

@@ -10,6 +10,8 @@ O script Bash original continua em `setup-fedora-dev.sh` como referência, mas o
 - Instala ferramentas base: Git, GCC, Make, Neovim, ripgrep, fd, fzf, jq, tmux, btop, eza, bat, Zsh, Kitty e dependências de build para runtimes.
 - Instala pgModeler em versão fixada disponível no Fedora 44.
 - Instala DBeaver CE via RPM oficial versionado, se `install_dbeaver` estiver ativo.
+- Instala Obsidian pelo AppImage oficial versionado, com comando `obsidian` e atalho no menu de aplicações, se `install_obsidian` estiver ativo.
+- Instala Gradia do Flathub e configura `<Super><Shift>S` para abrir sua captura de tela interativa, se `install_gradia` e `configure_gnome` estiverem ativos.
 - Instala `mise`.
 - Instala runtimes/SDKs e ferramentas globais pelo `mise` com versões fixadas: `.NET`, `Python`, `Node.js LTS`, `Go` e `lazygit`.
 - Instala `pipx` e ferramentas Python usando o Python gerenciado pelo `mise`: `uv`, `poetry`, `ruff`, `black`, `mypy`, `ipython`, `httpie`, `cookiecutter` e `pre-commit`.
@@ -50,6 +52,8 @@ Primeiro revise `group_vars/all.yml`, principalmente estas flags:
 - `configure_shell`: instala Oh My Zsh, plugins e altera shell padrão.
 - `install_lazyvim`: instala LazyVim em `~/.config/nvim`.
 - `install_dbeaver`: instala DBeaver CE via RPM oficial versionado.
+- `install_obsidian`: instala Obsidian pelo AppImage oficial versionado no diretório `~/Applications`.
+- `install_gradia`: instala Gradia do Flathub para o usuário atual.
 - `install_study_foundations`: instala ferramentas para exercícios de C, Linux, rede e diagnóstico.
 - `install_database_tooling`: instala o cliente PostgreSQL.
 - `install_platform_tooling`: instala ferramentas de Kubernetes, IaC e carga.
@@ -123,6 +127,7 @@ Reinicie a sessão ou reinicie o computador para aplicar:
 - Usuário adicionado ao grupo `docker`.
 - Fonte e tema no GNOME.
 - Atalho `<Super>Return` abrindo Kitty.
+- Atalho `<Super><Shift>S` abrindo a captura de tela interativa do Gradia.
 
 ## Validação
 
