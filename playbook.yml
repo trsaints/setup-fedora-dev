@@ -162,6 +162,105 @@
           StartupWMClass=obsidian
       when: install_obsidian
 
+    - name: Download ai-memory installer
+      ansible.builtin.get_url:
+        url: "{{ ai_memory_installer_url }}"
+        dest: "{{ ai_memory_installer_path }}"
+        mode: "0755"
+        checksum: "sha256:{{ ai_memory_installer_sha256 }}"
+      when: install_ai_memory
+
+    - name: Install ai-memory
+      ansible.builtin.command:
+        argv:
+          - sh
+          - "{{ ai_memory_installer_path }}"
+      environment:
+        AI_MEMORY_VERSION: "{{ ai_memory_version }}"
+        AI_MEMORY_BIN_DIR: "{{ ai_memory_bin_path | dirname }}"
+        AI_MEMORY_LIB_DIR: "{{ dev_home }}/.local/lib/ai-memory"
+      changed_when: false
+      when: install_ai_memory
+
+    - name: Initialise ai-memory data directory
+      ansible.builtin.command:
+        argv:
+          - "{{ ai_memory_bin_path }}"
+          - --data-dir
+          - "{{ ai_memory_data_dir }}"
+          - --config
+          - "{{ ai_memory_config_path }}"
+          - init
+      args:
+        creates: "{{ ai_memory_config_path }}"
+      when: install_ai_memory
+
+    - name: Configure ai-memory bind address
+      ansible.builtin.lineinfile:
+        path: "{{ ai_memory_config_path }}"
+        regexp: '^bind\s*='
+        line: 'bind = "{{ ai_memory_bind }}"'
+      notify: Restart ai-memory service
+      when: install_ai_memory
+
+    - name: Configure ai-memory server URL
+      ansible.builtin.lineinfile:
+        path: "{{ ai_memory_config_path }}"
+        regexp: '^server_url\s*='
+        insertafter: '^bind\s*='
+        line: 'server_url = "{{ ai_memory_server_url }}"'
+      notify: Restart ai-memory service
+      when: install_ai_memory
+
+    - name: Set up ai-memory service and OpenCode integration
+      ansible.builtin.command:
+        argv:
+          - "{{ ai_memory_bin_path }}"
+          - --data-dir
+          - "{{ ai_memory_data_dir }}"
+          - --config
+          - "{{ ai_memory_config_path }}"
+          - setup
+          - --yes
+          - --agent
+          - open-code
+      changed_when: false
+      when: install_ai_memory
+
+    - name: Configure ai-memory OpenCode hooks with the selected port
+      ansible.builtin.command:
+        argv:
+          - "{{ ai_memory_bin_path }}"
+          - --data-dir
+          - "{{ ai_memory_data_dir }}"
+          - --config
+          - "{{ ai_memory_config_path }}"
+          - install-hooks
+          - --agent
+          - open-code
+          - --server-url
+          - "{{ ai_memory_server_url }}"
+          - --apply
+      changed_when: false
+      when: install_ai_memory
+
+    - name: Configure ai-memory OpenCode MCP server with the selected port
+      ansible.builtin.command:
+        argv:
+          - "{{ ai_memory_bin_path }}"
+          - --data-dir
+          - "{{ ai_memory_data_dir }}"
+          - --config
+          - "{{ ai_memory_config_path }}"
+          - install-mcp
+          - --client
+          - open-code
+          - --server-url
+          - "{{ ai_memory_server_url }}"
+          - --apply
+      changed_when: false
+      when: install_ai_memory
+
     - name: Install pgModeler
       ansible.builtin.dnf:
         name: "{{ pgmodeler_package }}"
@@ -726,6 +825,12 @@
         - install_gradia
 
   handlers:
+    - name: Restart ai-memory service
+      ansible.builtin.systemd_service:
+        name: ai-memory.service
+        scope: user
+        state: restarted
+
     - name: Rebuild font cache
       ansible.builtin.command: "fc-cache -fv {{ dev_home }}/.local/share/fonts"
       changed_when: false
