@@ -235,9 +235,46 @@ ai_memory_server_url: "http://{{ ai_memory_bind }}"
 # GitHub MCP no OpenCode. O PAT nunca e gravado no opencode.json: a configuracao
 # referencia {env:GITHUB_MCP_PAT} e o valor e injetado no shell.
 configure_github_mcp: true
+configure_opencode_permissions: true
 opencode_config_dir: "{{ dev_home }}/.config/opencode"
 opencode_config_path: "{{ opencode_config_dir }}/opencode.json"
 opencode_schema_url: "https://opencode.ai/config.json"
+opencode_permission_restrictions:
+  - { action: "*", resource: "*", effect: ask }
+  - { action: read, resource: "*", effect: allow }
+  - { action: edit, resource: "*", effect: ask }
+  - { action: shell, resource: "*", effect: ask }
+  - { action: glob, resource: "*", effect: allow }
+  - { action: grep, resource: "*", effect: allow }
+  - { action: websearch, resource: "*", effect: allow }
+  - { action: external_directory, resource: "*", effect: allow }
+  - { action: shell, resource: "ls *", effect: allow }
+  - { action: shell, resource: ls, effect: allow }
+  - { action: shell, resource: pwd, effect: allow }
+  - { action: shell, resource: "find *", effect: allow }
+  - { action: shell, resource: "grep *", effect: allow }
+  - { action: shell, resource: "rg *", effect: allow }
+  - { action: shell, resource: "wc *", effect: allow }
+  - { action: shell, resource: "ansible-playbook --syntax-check *", effect: allow }
+  - { action: shell, resource: "ansible-lint *", effect: allow }
+  - { action: shell, resource: "yamllint *", effect: allow }
+  - { action: shell, resource: "python3 -m json.tool *", effect: allow }
+  - { action: shell, resource: "node --check *", effect: allow }
+  - { action: shell, resource: "bash -n *", effect: allow }
+  - { action: shell, resource: "sh -n *", effect: allow }
+  - { action: shell, resource: "zsh -n *", effect: allow }
+  - { action: shell, resource: "git *", effect: deny }
+  - { action: shell, resource: git, effect: deny }
+  - { action: edit, resource: "**/.git/**", effect: deny }
+  - { action: shell, resource: "git status*", effect: allow }
+  - { action: shell, resource: "git diff*", effect: allow }
+  - { action: shell, resource: "git log*", effect: allow }
+  - { action: shell, resource: "git show*", effect: allow }
+  - { action: shell, resource: "git blame*", effect: allow }
+  - { action: shell, resource: "git branch", effect: allow }
+  - { action: shell, resource: "git branch --list*", effect: allow }
+  - { action: shell, resource: "git tag", effect: allow }
+  - { action: shell, resource: "git rev-parse*", effect: allow }
 github_mcp_server_name: github
 github_mcp_url: "https://api.githubcopilot.com/mcp/"
 github_mcp_pat_env_var: GITHUB_MCP_PAT

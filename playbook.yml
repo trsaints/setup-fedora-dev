@@ -460,24 +460,24 @@
         path: "{{ opencode_config_dir }}"
         state: directory
         mode: "0700"
-      when: configure_github_mcp
-      tags: [github_mcp]
+      when: configure_github_mcp or configure_opencode_permissions
+      tags: [github_mcp, opencode_permissions]
 
     - name: Check OpenCode configuration file
       ansible.builtin.stat:
         path: "{{ opencode_config_path }}"
       register: opencode_config_file
-      when: configure_github_mcp
-      tags: [github_mcp]
+      when: configure_github_mcp or configure_opencode_permissions
+      tags: [github_mcp, opencode_permissions]
 
     - name: Read OpenCode configuration file
       ansible.builtin.slurp:
         src: "{{ opencode_config_path }}"
       register: opencode_config_slurp
       when:
-        - configure_github_mcp
+        - configure_github_mcp or configure_opencode_permissions
         - opencode_config_file.stat.exists
-      tags: [github_mcp]
+      tags: [github_mcp, opencode_permissions]
 
     - name: Load OpenCode configuration
       ansible.builtin.set_fact:
@@ -485,8 +485,19 @@
           {{ (opencode_config_slurp.content | b64decode | from_json)
              if opencode_config_file.stat.exists
              else {} }}
-      when: configure_github_mcp
-      tags: [github_mcp]
+      when: configure_github_mcp or configure_opencode_permissions
+      tags: [github_mcp, opencode_permissions]
+
+    - name: Append OpenCode permission restrictions without replacing existing rules
+      ansible.builtin.set_fact:
+        opencode_config: >-
+          {{ opencode_config
+             | combine({'permissions': (opencode_config.permissions | default([]))
+                                          + (opencode_permission_restrictions
+                                             | reject('in', opencode_config.permissions | default([]))
+                                             | list)}) }}
+      when: configure_opencode_permissions
+      tags: [opencode_permissions]
 
     - name: Remove legacy V1 GitHub MCP entry from OpenCode configuration
       ansible.builtin.set_fact:
@@ -501,22 +512,20 @@
         - github_mcp_server_name in (opencode_config.mcp | default({}))
       tags: [github_mcp]
 
-    - name: Configure GitHub MCP server in OpenCode
+    - name: Write managed OpenCode configuration
       ansible.builtin.copy:
         content: |
           {{ opencode_config
              | combine({'$schema': opencode_schema_url})
-             | combine({'mcp': {'servers': {github_mcp_server_name: {
-                 'type': 'remote',
-                 'url': github_mcp_url,
-                 'oauth': false,
+             | combine(({'mcp': {'servers': {github_mcp_server_name: {
+                 'type': 'remote', 'url': github_mcp_url, 'oauth': false,
                  'headers': {'Authorization': 'Bearer {env:' ~ github_mcp_pat_env_var ~ '}'}
-               }}}}, recursive=true)
+               }}}} if configure_github_mcp else {}), recursive=true)
              | to_nice_json(indent=2) }}
         dest: "{{ opencode_config_path }}"
         mode: "0600"
-      when: configure_github_mcp
-      tags: [github_mcp]
+      when: configure_github_mcp or configure_opencode_permissions
+      tags: [github_mcp, opencode_permissions]
 
     - name: Write GitHub MCP PAT environment file
       ansible.builtin.copy:

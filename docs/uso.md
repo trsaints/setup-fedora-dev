@@ -78,6 +78,8 @@ Reinicie o OpenCode depois da instalação para que ele carregue o plugin atuali
 
 O playbook grava `~/.config/opencode/opencode.json` com o servidor `github` em `mcp.servers` (formato do OpenCode V2), usando `oauth: false` e o cabeçalho `Authorization: Bearer {env:GITHUB_MCP_PAT}`. O token nunca é escrito nesse arquivo; ele é resolvido pelo OpenCode a partir do ambiente. O arquivo gerenciado é JSON estrito, sem comentários; use `~/.config/opencode/opencode.jsonc` para preferências locais, como o shell padrão.
 
+Também aplica, por padrão, as permissões definidas em `opencode_permission_restrictions`: libera leituras de arquivos, globs, buscas locais e na web, além de validadores de sintaxe comuns (Ansible, YAML, JSON, Node e shell); mantém confirmação para edições e outros comandos; e bloqueia comandos Git, exceto as consultas listadas. Regras já existentes são preservadas e as novas são anexadas uma única vez, para manter a precedência esperada pelo OpenCode. Para reaplicar apenas essas regras, execute `./bootstrap.sh --tags opencode_permissions`; defina `configure_opencode_permissions: false` em `group_vars/all.yml` para desativá-las.
+
 Para injetar o PAT, exporte `GITHUB_MCP_PAT` antes de executar o playbook:
 
 ```bash
