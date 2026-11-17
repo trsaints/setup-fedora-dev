@@ -229,8 +229,7 @@ ai_memory_installer_sha256: 758c5d19348120619bbf8246b18975685daea2a2443017b47cd6
 ai_memory_bin_path: "{{ dev_home }}/.local/bin/ai-memory"
 ai_memory_data_dir: "{{ dev_home }}/.local/share/ai-memory"
 ai_memory_config_path: "{{ ai_memory_data_dir }}/config.toml"
-ai_memory_bind: "127.0.0.1:25559"
-ai_memory_server_url: "http://{{ ai_memory_bind }}"
+ai_memory_bind_host: "127.0.0.1"
 
 # GitHub MCP no OpenCode. O PAT nunca e gravado no opencode.json: a configuracao
 # referencia {env:GITHUB_MCP_PAT} e o valor e injetado no shell.
@@ -252,6 +251,8 @@ opencode_permission_restrictions:
   - { action: shell, resource: ls, effect: allow }
   - { action: shell, resource: pwd, effect: allow }
   - { action: shell, resource: "find *", effect: allow }
+  - { action: shell, resource: "printf *", effect: allow }
+  - { action: shell, resource: "realpath *", effect: allow }
   - { action: shell, resource: "grep *", effect: allow }
   - { action: shell, resource: "rg *", effect: allow }
   - { action: shell, resource: "wc *", effect: allow }
@@ -275,6 +276,9 @@ opencode_permission_restrictions:
   - { action: shell, resource: "git branch --list*", effect: allow }
   - { action: shell, resource: "git tag", effect: allow }
   - { action: shell, resource: "git rev-parse*", effect: allow }
+  - { action: execute, resource: "*", effect: allow }
+  - { action: ai_memory_*, resource: "*", effect: allow }
+  - { action: opencode_*, resource: "*", effect: allow }
 github_mcp_server_name: github
 github_mcp_url: "https://api.githubcopilot.com/mcp/"
 github_mcp_pat_env_var: GITHUB_MCP_PAT

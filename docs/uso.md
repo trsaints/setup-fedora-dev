@@ -11,7 +11,7 @@
 - Visual Studio Code pelo repositório oficial da Microsoft e GitHub CLI (`gh`) pelo Fedora.
 - Firefox Developer Edition pelo arquivo oficial da Mozilla em `~/Applications`, com o comando `firefox-developer-edition`.
 - Bruno via Flathub para chamadas e coleções de APIs locais e versionáveis com Git.
-- ai-memory como serviço do usuário, integrado ao OpenCode em `http://127.0.0.1:25559`.
+- ai-memory como serviço do usuário, integrado ao OpenCode em uma porta livre de loopback.
 - OpenCode CLI instalado pelo instalador oficial da V2, compartilhando a configuração com o OpenCode Desktop em `~/.config/opencode`.
 - Servidor MCP do GitHub registrado no OpenCode, autenticado por `GITHUB_MCP_PAT` sem gravar o token na configuração.
 - Oh My Zsh, tema Dracula, Kitty, JetBrains Mono Nerd Font, tema Dracula GTK e ícones Candy.
@@ -64,9 +64,9 @@ O OpenCode CLI e o OpenCode Desktop compartilham `~/.config/opencode`, então ag
 
 ### ai-memory
 
-O serviço usa `ai_memory_bind`, cujo padrão é `127.0.0.1:25559`; altere-o caso essa porta esteja ocupada. O playbook também atualiza a integração do OpenCode para usar a mesma URL.
+O playbook encerra uma instância anterior do serviço e pede ao sistema uma porta livre em `127.0.0.1` a cada execução. A porta é gravada em `config.toml` e a mesma URL é aplicada aos hooks e ao MCP do OpenCode; portanto, não há uma porta fixa no repositório.
 
-Após a primeira instalação, a Web UI fica em `http://127.0.0.1:25559/web`. Use qualquer nome de usuário e, como senha, o token local em:
+Após a instalação, confira a URL da Web UI com `grep '^server_url' ~/.local/share/ai-memory/config.toml` e acrescente `/web`. Use qualquer nome de usuário e, como senha, o token local em:
 
 ```bash
 cat ~/.local/share/ai-memory/auth-tokens/default

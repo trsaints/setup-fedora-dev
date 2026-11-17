@@ -377,6 +377,36 @@
         creates: "{{ ai_memory_config_path }}"
       when: install_ai_memory
 
+    - name: Stop ai-memory service before selecting a port
+      ansible.builtin.systemd_service:
+        name: ai-memory.service
+        scope: user
+        state: stopped
+      register: ai_memory_service_stop
+      failed_when: false
+      changed_when: false
+      when: install_ai_memory
+
+    - name: Allocate a free loopback port for ai-memory
+      ansible.builtin.command:
+        argv:
+          - "{{ ansible_facts.python.executable }}"
+          - -c
+          - |
+            import socket
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+                sock.bind(("{{ ai_memory_bind_host }}", 0))
+                print(sock.getsockname()[1])
+      register: ai_memory_free_port
+      changed_when: false
+      when: install_ai_memory
+
+    - name: Set ai-memory connection details
+      ansible.builtin.set_fact:
+        ai_memory_bind: "{{ ai_memory_bind_host }}:{{ ai_memory_free_port.stdout | trim }}"
+        ai_memory_server_url: "http://{{ ai_memory_bind_host }}:{{ ai_memory_free_port.stdout | trim }}"
+      when: install_ai_memory
+
     - name: Configure ai-memory bind address
       ansible.builtin.lineinfile:
         path: "{{ ai_memory_config_path }}"
@@ -392,13 +422,22 @@
         line: 'server_url = "{{ ai_memory_server_url }}"'
       when: install_ai_memory
 
-    - name: Restart ai-memory service before setup
+    - name: Start ai-memory service before setup
       ansible.builtin.systemd_service:
         name: ai-memory.service
         scope: user
-        state: restarted
+        state: started
       when: install_ai_memory
+      failed_when: false
       changed_when: false
+
+    - name: Wait for ai-memory service to accept connections
+      ansible.builtin.wait_for:
+        host: "{{ ai_memory_bind_host }}"
+        port: "{{ ai_memory_free_port.stdout | trim | int }}"
+        state: started
+        timeout: 30
+      when: install_ai_memory
 
     - name: Set up ai-memory service and OpenCode integration
       ansible.builtin.command:
