@@ -256,6 +256,11 @@ opencode_permission_restrictions:
   - { action: shell, resource: "grep *", effect: allow }
   - { action: shell, resource: "rg *", effect: allow }
   - { action: shell, resource: "wc *", effect: allow }
+  - { action: shell, resource: "echo *", effect: allow }
+  - { action: shell, resource: "cat *", effect: allow }
+  - { action: shell, resource: "tail *", effect: allow }
+  - { action: shell, resource: "head *", effect: allow }
+  - { action: shell, resource: "nl *", effect: allow }
   - { action: shell, resource: "ansible-playbook --syntax-check *", effect: allow }
   - { action: shell, resource: "ansible-lint *", effect: allow }
   - { action: shell, resource: "yamllint *", effect: allow }
